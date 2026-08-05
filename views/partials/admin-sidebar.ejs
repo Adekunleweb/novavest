@@ -1,0 +1,16 @@
+<!-- Admin Sidebar Partial -->
+<aside class="admin-sidebar">
+  <a href="/admin" class="logo">Nova<span>Vest</span></a>
+  <div class="admin-tag">Admin Panel</div>
+  <nav class="admin-nav">
+    <a href="/admin" class="<%= active === 'overview' ? 'active' : '' %>"><span class="icon">📊</span> Dashboard</a>
+    <a href="/admin/users" class="<%= active === 'users' ? 'active' : '' %>"><span class="icon">👥</span> Users</a>
+    <a href="/admin/deposits" class="<%= active === 'deposits' ? 'active' : '' %>"><span class="icon">💰</span> Deposits</a>
+    <a href="/admin/withdrawals" class="<%= active === 'withdrawals' ? 'active' : '' %>"><span class="icon">🏦</span> Withdrawals</a>
+    <a href="/admin/wallets" class="<%= active === 'wallets' ? 'active' : '' %>"><span class="icon">👛</span> Wallets</a>
+    <a href="/admin/plans" class="<%= active === 'plans' ? 'active' : '' %>"><span class="icon">📈</span> Plans</a>
+    <a href="/admin/support" class="<%= active === 'support' ? 'active' : '' %>"><span class="icon">💬</span> Support</a>
+    <a href="/admin/activity" class="<%= active === 'activity' ? 'active' : '' %>"><span class="icon">📋</span> Activity Log</a>
+    <a href="/admin/logout" style="margin-top:20px;"><span class="icon">🚪</span> Logout</a>
+  </nav>
+</aside>

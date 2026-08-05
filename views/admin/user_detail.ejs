@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1><%= user.full_name %></h1>
+        <div class="sub" style="color:var(--gray);"><%= user.email %> · <%= user.country %></div>
+      </div>
+      <a href="/admin/users" class="btn btn-outline btn-sm">← Back to Users</a>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon gold">💵</div>
+        <div class="stat-val">$<%= (user.balance || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Current Balance</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📉</div>
+        <div class="stat-val">$<%= (user.total_deposited || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Total Deposited</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📈</div>
+        <div class="stat-val">$<%= (user.total_earned || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Total Earned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">🎯</div>
+        <div class="stat-val"><%= investments.filter(i=>i.status==='active').length %></div>
+        <div class="stat-lbl">Active Investments</div>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="dash-panel">
+        <div class="dash-panel-title">All Signup Details</div>
+        <div class="info-row"><span class="lbl">Full Name</span><span class="val"><%= user.full_name %></span></div>
+        <div class="info-row"><span class="lbl">Email</span><span class="val"><%= user.email %></span></div>
+        <div class="info-row"><span class="lbl">Phone</span><span class="val"><%= user.phone || '—' %></span></div>
+        <div class="info-row"><span class="lbl">Country</span><span class="val"><%= user.country || '—' %></span></div>
+        <div class="info-row"><span class="lbl">Address</span><span class="val"><%= user.address || '—' %></span></div>
+        <div class="info-row"><span class="lbl">ID Type</span><span class="val"><%= user.id_type || '—' %></span></div>
+        <div class="info-row"><span class="lbl">National ID</span><span class="val"><%= user.national_id || '—' %></span></div>
+        <div class="info-row"><span class="lbl">Status</span><span class="val"><%= user.status %></span></div>
+        <div class="info-row"><span class="lbl">Joined</span><span class="val"><%= new Date(user.created_at).toLocaleString() %></span></div>
+        
+        <div style="margin-top:20px; display:flex; gap:10px;">
+          <form action="/admin/users/<%= user.id %>/status" method="POST" style="flex:1;">
+            <input type="hidden" name="status" value="active">
+            <button class="btn btn-gold btn-block btn-sm" <%= user.status==='active' ? 'disabled' : '' %>>Activate</button>
+          </form>
+          <form action="/admin/users/<%= user.id %>/status" method="POST" style="flex:1;">
+            <input type="hidden" name="status" value="blocked">
+            <button class="btn btn-navy btn-block btn-sm" <%= user.status==='blocked' ? 'disabled' : '' %>>Block</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="dash-panel">
+        <div class="dash-panel-title">Deposits</div>
+        <% if (deposits.length === 0) { %>
+          <p style="color:var(--gray); text-align:center; padding:20px; font-size:14px;">No deposits.</p>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>Date</th><th>Currency</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              <% deposits.forEach(function(d) { %>
+                <tr><td style="font-size:12px;"><%= new Date(d.created_at).toLocaleDateString() %></td><td><%= d.currency %></td><td>$<%= d.amount %></td><td><span class="badge badge-<%= d.status %>"><%= d.status %></span></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+        
+        <div class="dash-panel-title" style="margin-top:20px;">Investments</div>
+        <% if (investments.length === 0) { %>
+          <p style="color:var(--gray); text-align:center; padding:20px; font-size:14px;">No investments.</p>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>Date</th><th>Amount</th><th>ROI</th><th>Status</th></tr></thead>
+            <tbody>
+              <% investments.forEach(function(inv) { %>
+                <tr><td style="font-size:12px;"><%= new Date(inv.created_at).toLocaleDateString() %></td><td>$<%= inv.amount %></td><td><%= inv.roi_percent %>%</td><td><span class="badge badge-<%= inv.status %>"><%= inv.status %></span></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="detail-grid" style="margin-top:24px;">
+      <div class="dash-panel">
+        <div class="dash-panel-title">Transactions</div>
+        <% if (transactions.length === 0) { %>
+          <p style="color:var(--gray); text-align:center; padding:20px; font-size:14px;">No transactions.</p>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              <% transactions.forEach(function(t) { %>
+                <tr><td style="font-size:12px;"><%= new Date(t.created_at).toLocaleDateString() %></td><td style="text-transform:capitalize;"><%= t.type %></td><td>$<%= t.amount %></td><td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+
+      <div class="dash-panel">
+        <div class="dash-panel-title">Withdrawals</div>
+        <% if (withdrawals.length === 0) { %>
+          <p style="color:var(--gray); text-align:center; padding:20px; font-size:14px;">No withdrawals.</p>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>Date</th><th>Amount</th><th>Currency</th><th>Status</th></tr></thead>
+            <tbody>
+              <% withdrawals.forEach(function(w) { %>
+                <tr><td style="font-size:12px;"><%= new Date(w.created_at).toLocaleDateString() %></td><td>$<%= w.amount %></td><td><%= w.currency %></td><td><span class="badge badge-<%= w.status %>"><%= w.status %></span></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="dash-panel" style="margin-top:24px;">
+      <div class="dash-panel-title">User Activity Log</div>
+      <% if (activities.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:20px; font-size:14px;">No activity logged.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Action</th><th>Details</th><th>IP</th><th>Time</th></tr></thead>
+          <tbody>
+            <% activities.forEach(function(a) { %>
+              <tr><td style="text-transform:capitalize; font-weight:600;"><%= a.action %></td><td style="font-size:13px;"><%= a.details %></td><td style="font-size:12px; color:var(--gray);"><%= a.ip_address || '—' %></td><td style="font-size:12px; color:var(--gray);"><%= new Date(a.created_at).toLocaleString() %></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </main>
+</div>
+</body>
+</html>

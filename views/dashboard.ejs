@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dash-layout">
+  <%- include('partials/dash-sidebar', { active }) %>
+  <main class="dash-main">
+    <div class="dash-header">
+      <div>
+        <h1>Welcome back, <%= user.full_name.split(' ')[0] %> 👋</h1>
+        <div class="sub">Here's your investment overview</div>
+      </div>
+      <div class="dash-user">
+        <div class="dash-avatar"><%= user.full_name.charAt(0).toUpperCase() %></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon gold">💵</div>
+        <div class="stat-val">$<%= (user.balance || 0).toLocaleString(undefined, {minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Available Balance</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📉</div>
+        <div class="stat-val">$<%= (user.total_deposited || 0).toLocaleString(undefined, {minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Total Deposited</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📈</div>
+        <div class="stat-val">$<%= (user.total_earned || 0).toLocaleString(undefined, {minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Total Earned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">🎯</div>
+        <div class="stat-val"><%= investments.filter(i => i.status === 'active').length %></div>
+        <div class="stat-lbl">Active Investments</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+      <!-- Active Investments -->
+      <div class="dash-panel">
+        <div class="dash-panel-title">Active Investments</div>
+        <% if (investments.filter(i => i.status === 'active').length === 0) { %>
+          <p style="color:var(--gray); text-align:center; padding:20px;">No active investments yet.</p>
+          <a href="/invest" class="btn btn-gold btn-block btn-sm">Start Investing</a>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>Plan</th><th>Amount</th><th>ROI</th><th>Status</th></tr></thead>
+            <tbody>
+              <% investments.filter(i => i.status === 'active').forEach(function(inv) { %>
+                <tr>
+                  <td>Plan #<%= inv.plan_id %></td>
+                  <td>$<%= inv.amount.toLocaleString() %></td>
+                  <td style="color:var(--green)"><%= inv.roi_percent %>%</td>
+                  <td><span class="badge badge-active">Active</span></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="dash-panel">
+        <div class="dash-panel-title">Recent Transactions</div>
+        <% if (transactions.length === 0) { %>
+          <p style="color:var(--gray); text-align:center; padding:20px;">No transactions yet.</p>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              <% transactions.forEach(function(t) { %>
+                <tr>
+                  <td style="text-transform:capitalize;"><%= t.type %></td>
+                  <td>$<%= t.amount.toLocaleString() %></td>
+                  <td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">Quick Actions</div>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
+        <a href="/deposit" class="btn btn-navy btn-block btn-sm">💰 Make Deposit</a>
+        <a href="/invest" class="btn btn-gold btn-block btn-sm">📈 New Investment</a>
+        <a href="/withdraw" class="btn btn-navy btn-block btn-sm">🏦 Withdraw</a>
+        <a href="/support" class="btn btn-outline btn-block btn-sm">💬 Get Help</a>
+      </div>
+    </div>
+
+    <!-- Available Plans -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">Available Investment Plans</div>
+      <div class="plans-grid">
+        <% plans.forEach(function(p, i) { %>
+          <div class="plan-card <%= i === 1 ? 'featured' : '' %>" style="padding:24px;">
+            <% if (p.badge) { %><div class="plan-badge"><%= p.badge %></div><% } %>
+            <div class="plan-name" style="font-size:20px;"><%= p.name %></div>
+            <div class="plan-roi" style="font-size:36px;"><%= p.roi_percent %><span>%</span></div>
+            <div class="plan-duration" style="font-size:13px;">in <%= p.duration_days %> days · from $<%= p.min_deposit %></div>
+            <a href="/invest" class="btn btn-gold btn-block btn-sm" style="margin-top:16px;">Choose Plan</a>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

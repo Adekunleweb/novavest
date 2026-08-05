@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1>Dashboard Overview</h1>
+        <div class="sub" style="color:var(--gray);">Welcome, <%= adminName %></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon gold">👥</div>
+        <div class="stat-val"><%= stats.totalUsers || 0 %></div>
+        <div class="stat-lbl">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">💰</div>
+        <div class="stat-val">$<%= (stats.totalDeposits || 0).toLocaleString(undefined,{maximumFractionDigits:0}) %></div>
+        <div class="stat-lbl">Total Deposits</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📈</div>
+        <div class="stat-val">$<%= (stats.totalEarnings || 0).toLocaleString(undefined,{maximumFractionDigits:0}) %></div>
+        <div class="stat-lbl">Total Earnings Paid</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">⏳</div>
+        <div class="stat-val"><%= pendingDeposits %></div>
+        <div class="stat-lbl">Pending Deposits</div>
+      </div>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(245,158,11,0.15); color:var(--orange);">🏦</div>
+        <div class="stat-val"><%= pendingWithdrawals %></div>
+        <div class="stat-lbl">Pending Withdrawals</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,0.15); color:var(--red);">💬</div>
+        <div class="stat-val"><%= unreadMessages %></div>
+        <div class="stat-lbl">Unread Messages</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:24px;">
+      <!-- Recent Activity -->
+      <div class="dash-panel">
+        <div class="dash-panel-title">Recent Activity</div>
+        <% if (activities.length === 0) { %>
+          <p style="color:var(--gray); text-align:center; padding:20px;">No activity yet.</p>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>User</th><th>Action</th><th>Time</th></tr></thead>
+            <tbody>
+              <% activities.forEach(function(a) { %>
+                <tr>
+                  <td style="font-weight:600;"><%= a.details ? a.details.split(':')[0].substring(0,20) : 'System' %></td>
+                  <td><span style="text-transform:capitalize;"><%= a.action %></span></td>
+                  <td style="color:var(--gray); font-size:12px;"><%= new Date(a.created_at).toLocaleString() %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+
+      <!-- Recent Users -->
+      <div class="dash-panel">
+        <div class="dash-panel-title">Recent Users <a href="/admin/users" style="font-size:13px; color:var(--gold-dark);">View all →</a></div>
+        <% if (recentUsers.length === 0) { %>
+          <p style="color:var(--gray); text-align:center; padding:20px;">No users yet.</p>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>Name</th><th>Email</th><th>Country</th><th>Joined</th></tr></thead>
+            <tbody>
+              <% recentUsers.forEach(function(u) { %>
+                <tr>
+                  <td><a href="/admin/users/<%= u.id %>" style="font-weight:600; color:var(--navy);"><%= u.full_name %></a></td>
+                  <td style="font-size:13px;"><%= u.email %></td>
+                  <td style="font-size:13px;"><%= u.country || '—' %></td>
+                  <td style="color:var(--gray); font-size:12px;"><%= new Date(u.created_at).toLocaleDateString() %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

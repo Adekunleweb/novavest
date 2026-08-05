@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="logo">Nova<span>Vest</span></a>
+    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/plans">Plans</a>
+      <a href="/about">About</a>
+      <a href="/faq">FAQ</a>
+      <a href="/contact">Contact</a>
+      <div class="nav-cta">
+        <% if (user) { %>
+          <a href="/dashboard" class="btn btn-gold btn-sm">Dashboard</a>
+        <% } else { %>
+          <a href="/login" class="btn btn-outline btn-sm">Login</a>
+          <a href="/signup" class="btn btn-gold btn-sm">Get Started</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="hero" style="padding:80px 0;">
+  <div class="container">
+    <div style="max-width:800px; margin:0 auto; text-align:center;">
+      <span class="hero-badge">About NovaVest</span>
+      <h1 style="font-size:48px; margin-bottom:24px;">We Make Wealth-Building <span class="grad">Simple & Accessible</span></h1>
+      <p style="font-size:19px; color:#c5d1e0;">NovaVest is a premier investment platform designed to help people around the world grow their money through smart, AI-powered trading strategies. Since our founding, we've helped over 50,000 investors achieve their financial goals with guaranteed returns and unmatched security.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-title">
+      <span class="sub">Our Mission</span>
+      <h2>Democratizing Investment for Everyone</h2>
+    </div>
+    <div style="max-width:800px; margin:0 auto; text-align:center; font-size:17px; color:var(--gray); line-height:1.8;">
+      <p>We believe everyone deserves access to high-quality investment opportunities, not just the wealthy elite. That's why we've built a platform that lets you start with as little as $100 and earn guaranteed returns through our expertly managed portfolios. Our team of financial analysts and AI engineers work around the clock to identify the most profitable trading opportunities across crypto, forex, and commodities markets.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section-dark">
+  <div class="container">
+    <div class="section-title">
+      <span class="sub">By The Numbers</span>
+      <h2>Trusted Worldwide</h2>
+    </div>
+    <div class="stats-grid" style="max-width:900px; margin:0 auto;">
+      <div class="stat-card" style="background:rgba(255,255,255,0.05); text-align:center;">
+        <div class="stat-val" style="color:var(--gold);">$240M+</div>
+        <div class="stat-lbl" style="color:#8a9bb0;">Total Invested</div>
+      </div>
+      <div class="stat-card" style="background:rgba(255,255,255,0.05); text-align:center;">
+        <div class="stat-val" style="color:var(--gold);">50K+</div>
+        <div class="stat-lbl" style="color:#8a9bb0;">Active Investors</div>
+      </div>
+      <div class="stat-card" style="background:rgba(255,255,255,0.05); text-align:center;">
+        <div class="stat-val" style="color:var(--gold);">195+</div>
+        <div class="stat-lbl" style="color:#8a9bb0;">Countries</div>
+      </div>
+      <div class="stat-card" style="background:rgba(255,255,255,0.05); text-align:center;">
+        <div class="stat-val" style="color:var(--gold);">99.8%</div>
+        <div class="stat-lbl" style="color:#8a9bb0;">Payout Rate</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <h2>Join the NovaVest Family Today</h2>
+    <p>Start your journey to financial freedom with just $100.</p>
+    <a href="/signup" class="btn btn-navy">Create Your Free Account →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">Nova<span>Vest</span></div>
+        <p>The premium investment platform trusted by investors worldwide.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="/plans">Investment Plans</a>
+        <a href="/signup">Sign Up</a>
+        <a href="/login">Login</a>
+        <a href="/faq">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="/about">About Us</a>
+        <a href="/contact">Contact</a>
+        <a href="/faq">Help Center</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#">Terms of Service</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Risk Disclosure</a>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2024 NovaVest. All rights reserved.</div>
+  </div>
+</footer>
+</body>
+</html>

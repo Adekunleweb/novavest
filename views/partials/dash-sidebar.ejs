@@ -1,0 +1,14 @@
+<!-- User Dashboard Sidebar Partial -->
+<aside class="dash-sidebar">
+  <a href="/" class="logo">Nova<span>Vest</span></a>
+  <nav class="dash-nav">
+    <a href="/dashboard" class="<%= active === 'overview' ? 'active' : '' %>"><span class="icon">📊</span> Overview</a>
+    <a href="/deposit" class="<%= active === 'deposit' ? 'active' : '' %>"><span class="icon">💰</span> Deposit</a>
+    <a href="/invest" class="<%= active === 'invest' ? 'active' : '' %>"><span class="icon">📈</span> Invest</a>
+    <a href="/withdraw" class="<%= active === 'withdraw' ? 'active' : '' %>"><span class="icon">🏦</span> Withdraw</a>
+    <a href="/transactions" class="<%= active === 'transactions' ? 'active' : '' %>"><span class="icon">📋</span> Transactions</a>
+    <a href="/support" class="<%= active === 'support' ? 'active' : '' %>"><span class="icon">💬</span> Support</a>
+    <a href="/profile" class="<%= active === 'profile' ? 'active' : '' %>"><span class="icon">👤</span> Profile</a>
+    <a href="/logout" style="margin-top:20px;"><span class="icon">🚪</span> Logout</a>
+  </nav>
+</aside>

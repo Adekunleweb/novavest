@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="logo">Nova<span>Vest</span></a>
+    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/plans">Plans</a>
+      <a href="/about">About</a>
+      <a href="/faq">FAQ</a>
+      <a href="/contact">Contact</a>
+      <div class="nav-cta">
+        <% if (user) { %><a href="/dashboard" class="btn btn-gold btn-sm">Dashboard</a><% } else { %>
+          <a href="/login" class="btn btn-outline btn-sm">Login</a>
+          <a href="/signup" class="btn btn-gold btn-sm">Get Started</a><% } %>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section style="padding:60px 0;">
+  <div class="container">
+    <div class="section-title">
+      <span class="sub">Investment Plans</span>
+      <h2>Plans Designed for Every Investor</h2>
+      <p>From beginners to elite investors, we have a plan that fits your goals. All plans offer guaranteed returns with no hidden fees.</p>
+    </div>
+    <div class="plans-grid">
+      <% plans.forEach(function(p, i) { %>
+        <div class="plan-card <%= i === 1 ? 'featured' : '' %>">
+          <% if (p.badge) { %><div class="plan-badge"><%= p.badge %></div><% } %>
+          <div class="plan-name"><%= p.name %></div>
+          <div class="plan-min">Minimum deposit: $<%= p.min_deposit.toLocaleString() %></div>
+          <div class="plan-roi"><%= p.roi_percent %><span>%</span></div>
+          <div class="plan-duration">Return after <%= p.duration_days %> days</div>
+          <p style="font-size:14px; color:var(--gray); margin-bottom:20px; min-height:60px;"><%= p.description %></p>
+          <ul class="plan-features">
+            <li>Min: $<%= p.min_deposit.toLocaleString() %></li>
+            <li><%= p.roi_percent %>% guaranteed ROI</li>
+            <li>Payout in <%= p.duration_days %> days</li>
+            <li>24/7 support</li>
+          </ul>
+          <a href="/signup" class="btn btn-gold btn-block">Invest Now</a>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <h2>Ready to Start Earning?</h2>
+    <p>Join thousands of investors growing their wealth with NovaVest.</p>
+    <a href="/signup" class="btn btn-navy">Create Free Account →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-bottom" style="border:none;">© 2024 NovaVest. All rights reserved.</div>
+  </div>
+</footer>
+</body>
+</html>

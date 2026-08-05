@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="logo">Nova<span>Vest</span></a>
+    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+    <div class="nav-links">
+      <a href="/">Home</a><a href="/plans">Plans</a><a href="/about">About</a><a href="/faq">FAQ</a><a href="/contact">Contact</a>
+      <div class="nav-cta"><% if (user) { %><a href="/dashboard" class="btn btn-gold btn-sm">Dashboard</a><% } else { %><a href="/login" class="btn btn-outline btn-sm">Login</a><a href="/signup" class="btn btn-gold btn-sm">Get Started</a><% } %></div>
+    </div>
+  </div>
+</nav>
+
+<section style="padding:80px 0;">
+  <div class="container" style="max-width:800px;">
+    <div class="section-title">
+      <span class="sub">Help Center</span>
+      <h2>Frequently Asked Questions</h2>
+      <p>Everything you need to know about investing with NovaVest.</p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="dash-panel">
+        <h3 style="margin-bottom:10px;">How do I start investing?</h3>
+        <p style="color:var(--gray);">Simply create a free account, choose a deposit wallet, fund your account with a minimum of $100, then select an investment plan. Your returns will be credited automatically after the plan duration.</p>
+      </div>
+      <div class="dash-panel">
+        <h3 style="margin-bottom:10px;">What is the minimum deposit?</h3>
+        <p style="color:var(--gray);">The minimum deposit is $100 for the Starter plan. Higher plans require larger deposits but offer significantly higher returns.</p>
+      </div>
+      <div class="dash-panel">
+        <h3 style="margin-bottom:10px;">How fast are payouts?</h3>
+        <p style="color:var(--gray);">Payouts are processed automatically once your investment plan matures. Withdrawals are typically processed within 24 hours of request.</p>
+      </div>
+      <div class="dash-panel">
+        <h3 style="margin-bottom:10px;">Is my money safe?</h3>
+        <p style="color:var(--gray);">Absolutely. We use bank-grade encryption, cold storage for crypto assets, and multi-layer security. Your funds and personal data are always protected.</p>
+      </div>
+      <div class="dash-panel">
+        <h3 style="margin-bottom:10px;">Can I invest from any country?</h3>
+        <p style="color:var(--gray);">Yes! NovaVest is available worldwide in 195+ countries. Our signup process adapts to your country's requirements for verification.</p>
+      </div>
+      <div class="dash-panel">
+        <h3 style="margin-bottom:10px;">What payment methods are supported?</h3>
+        <p style="color:var(--gray);">We support multiple cryptocurrencies including Bitcoin, Ethereum, USDT (TRC-20 & ERC-20), and Litecoin. Choose your preferred wallet on the deposit page.</p>
+      </div>
+      <div class="dash-panel">
+        <h3 style="margin-bottom:10px;">How do I contact support?</h3>
+        <p style="color:var(--gray);">Once logged in, you can chat with our support team in real-time through the Support section. We're available 24/7 to assist you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer><div class="container"><div class="footer-bottom" style="border:none;">© 2024 NovaVest. All rights reserved.</div></div></footer>
+</body>
+</html>

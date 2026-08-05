@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1>All Users</h1>
+        <div class="sub" style="color:var(--gray);"><%= users.length %> registered users</div>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <table class="table">
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>ID Type</th><th>National ID</th><th>Balance</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
+        <tbody>
+          <% users.forEach(function(u) { %>
+            <tr>
+              <td style="font-weight:600;"><%= u.full_name %></td>
+              <td style="font-size:13px;"><%= u.email %></td>
+              <td style="font-size:13px;"><%= u.phone || '—' %></td>
+              <td style="font-size:13px;"><%= u.country || '—' %></td>
+              <td style="font-size:13px;"><%= u.id_type || '—' %></td>
+              <td style="font-size:12px; font-family:monospace;"><%= u.national_id || '—' %></td>
+              <td>$<%= (u.balance || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></td>
+              <td><span class="badge badge-<%= u.status === 'active' ? 'active' : 'rejected' %>"><%= u.status %></span></td>
+              <td style="color:var(--gray); font-size:12px;"><%= new Date(u.created_at).toLocaleDateString() %></td>
+              <td><a href="/admin/users/<%= u.id %>" class="btn btn-gold btn-sm">View</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% if (users.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:40px;">No users registered yet.</p>
+      <% } %>
+    </div>
+  </main>
+</div>
+</body>
+</html>

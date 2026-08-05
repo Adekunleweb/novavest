@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <a href="/" class="logo">Nova<span>Vest</span></a>
+      <h2>Admin Login</h2>
+      <p>Access the administration dashboard</p>
+    </div>
+
+    <% if (error) { %>
+      <div class="auth-error"><%= error %></div>
+    <% } %>
+
+    <form action="/admin/login" method="POST">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" class="form-control" placeholder="admin" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-gold btn-block">Login to Admin Panel →</button>
+    </form>
+
+    <div class="auth-footer">
+      <a href="/">← Back to website</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

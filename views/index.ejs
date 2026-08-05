@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="logo">Nova<span>Vest</span></a>
+    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/plans">Plans</a>
+      <a href="/about">About</a>
+      <a href="/faq">FAQ</a>
+      <a href="/contact">Contact</a>
+      <div class="nav-cta">
+        <% if (user) { %>
+          <a href="/dashboard" class="btn btn-gold btn-sm">Dashboard</a>
+        <% } else { %>
+          <a href="/login" class="btn btn-outline btn-sm">Login</a>
+          <a href="/signup" class="btn btn-gold btn-sm">Get Started</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" style="padding-bottom:80px;">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <span class="hero-badge">🚀 Trusted by 50,000+ investors worldwide</span>
+        <h1>Grow Your Wealth with <span class="grad">Smart Investments</span> That Actually Deliver</h1>
+        <p>NovaVest connects you to elite trading strategies, AI-powered portfolio management, and guaranteed returns. Start with just $100 and earn up to 25% in 7 days — no experience required.</p>
+        <div class="hero-cta">
+          <a href="/signup" class="btn btn-gold">Start Investing Now →</a>
+          <a href="/plans" class="btn btn-outline">View Plans</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="num">$240M+</div>
+            <div class="label">Total Investments</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num">50K+</div>
+            <div class="label">Active Investors</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num">99.8%</div>
+            <div class="label">Payout Success</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="hero-card">
+          <div class="hero-card-title">Portfolio Value</div>
+          <div class="hero-card-amount">$48,350.00</div>
+          <div class="hero-chart"></div>
+          <div class="hero-card-row">
+            <span class="lbl">Active Plan</span>
+            <span class="val">Professional</span>
+          </div>
+          <div class="hero-card-row">
+            <span class="lbl">ROI Rate</span>
+            <span class="val" style="color:var(--green)">+60.0%</span>
+          </div>
+          <div class="hero-card-row">
+            <span class="lbl">Next Payout</span>
+            <span class="val">In 5 days</span>
+          </div>
+          <div class="hero-card-row">
+            <span class="lbl">Total Earned</span>
+            <span class="val" style="color:var(--gold)">$18,200.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Investment Plans -->
+<section id="plans">
+  <div class="container">
+    <div class="section-title">
+      <span class="sub">Investment Plans</span>
+      <h2>Choose Your Path to Financial Freedom</h2>
+      <p>Every plan is designed to maximize your returns while keeping risk minimal. Pick the one that fits your goals and watch your money grow.</p>
+    </div>
+    <div class="plans-grid">
+      <% plans.forEach(function(p, i) { %>
+        <div class="plan-card <%= i === 1 ? 'featured' : '' %>">
+          <% if (p.badge) { %><div class="plan-badge"><%= p.badge %></div><% } %>
+          <div class="plan-name"><%= p.name %></div>
+          <div class="plan-min">Minimum deposit: $<%= p.min_deposit.toLocaleString() %></div>
+          <div class="plan-roi"><%= p.roi_percent %><span>%</span></div>
+          <div class="plan-duration">Return after <%= p.duration_days %> days</div>
+          <ul class="plan-features">
+            <li>Min: $<%= p.min_deposit.toLocaleString() %> <% if (p.max_deposit) { %>— Max: $<%= p.max_deposit.toLocaleString() %><% } else { %>— No limit<% } %></li>
+            <li><%= p.roi_percent %>% guaranteed ROI</li>
+            <li>Payout in <%= p.duration_days %> days</li>
+            <li>24/7 customer support</li>
+            <li>Secure crypto deposits</li>
+            <li>Instant withdrawal after maturity</li>
+          </ul>
+          <a href="/signup" class="btn btn-gold btn-block">Invest Now</a>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section-dark">
+  <div class="container">
+    <div class="section-title">
+      <span class="sub">Why NovaVest</span>
+      <h2>The Smart Choice for Smart Investors</h2>
+      <p>We combine cutting-edge technology with proven financial strategies to deliver consistent, reliable returns.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Bank-Grade Security</h3>
+        <p>Your funds and data are protected with military-grade encryption, multi-layer security protocols, and cold storage for all crypto assets.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <h3>Guaranteed Returns</h3>
+        <p>Our AI-driven trading engine and expert analysts deliver fixed ROI on every plan. What you see is exactly what you earn — no hidden fees.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌍</div>
+        <h3>Global Access</h3>
+        <p>Invest from anywhere in the world. We support users across 195+ countries with localized signup and multiple crypto payment options.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Fast Payouts</h3>
+        <p>Withdraw your earnings instantly after plan maturity. No long waiting periods, no unnecessary verification delays.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>24/7 Live Support</h3>
+        <p>Got questions? Our dedicated support team is available around the clock through real-time chat to help you every step of the way.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💎</div>
+        <h3>Premium Experience</h3>
+        <p>Enjoy a sleek, intuitive dashboard that tracks every deposit, investment, and earning in real time. Investing has never looked this good.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="section-dark" style="padding-top:0;">
+  <div class="container">
+    <div class="section-title">
+      <span class="sub">Getting Started</span>
+      <h2>Start Earning in 4 Simple Steps</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Create Account</h3>
+        <p>Sign up in minutes with your details. Available worldwide with country-specific verification.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Choose a Wallet</h3>
+        <p>Select your preferred cryptocurrency and copy our secure deposit wallet address.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Pick a Plan</h3>
+        <p>Select the investment plan that matches your goals and deposit amount.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h3>Earn & Withdraw</h3>
+        <p>Watch your investment grow and withdraw your profits after plan maturity.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section>
+  <div class="container">
+    <div class="section-title">
+      <span class="sub">Success Stories</span>
+      <h2>What Our Investors Are Saying</h2>
+      <p>Real people, real results. Join thousands who've transformed their financial future with NovaVest.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="quote">"I started with the Starter plan and earned 25% in just a week. The withdrawal was instant and the support team was incredibly helpful. NovaVest is the real deal."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">JM</div>
+          <div>
+            <div class="name">James Mitchell</div>
+            <div class="role">Investor, United States</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="quote">"After trying several platforms, NovaVest stands out. I moved to the Professional plan and the 60% return in 14 days changed everything. Highly recommend to anyone serious about investing."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">AO</div>
+          <div>
+            <div class="name">Adebayo Okonkwo</div>
+            <div class="role">Entrepreneur, Nigeria</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="quote">"The Elite plan delivered exactly as promised — 150% in 30 days. The dashboard is beautiful and I love that I can chat support anytime. This platform is exceptional."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">SK</div>
+          <div>
+            <div class="name">Sarah Kim</div>
+            <div class="role">Business Owner, Singapore</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Band -->
+<section class="cta-band" style="padding:60px 0;">
+  <div class="container">
+    <h2>Ready to Start Growing Your Wealth?</h2>
+    <p>Join 50,000+ investors earning daily with NovaVest. Your financial future starts today.</p>
+    <a href="/signup" class="btn btn-navy">Create Your Free Account →</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">Nova<span>Vest</span></div>
+        <p>The premium investment platform trusted by investors worldwide. We make wealth-building simple, secure, and accessible to everyone.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="/plans">Investment Plans</a>
+        <a href="/signup">Sign Up</a>
+        <a href="/login">Login</a>
+        <a href="/faq">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="/about">About Us</a>
+        <a href="/contact">Contact</a>
+        <a href="/faq">Help Center</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#">Terms of Service</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Risk Disclosure</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2024 NovaVest. All rights reserved. Investing involves risk. Past performance is not indicative of future results.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

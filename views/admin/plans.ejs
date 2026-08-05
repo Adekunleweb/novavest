@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1>Investment Plans</h1>
+        <div class="sub" style="color:var(--gray);">Create and manage investment plans</div>
+      </div>
+    </div>
+
+    <!-- Add new plan -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">Add New Plan</div>
+      <form action="/admin/plans/add" method="POST">
+        <div class="form-row">
+          <div class="form-group"><label>Plan Name</label><input type="text" name="name" class="form-control" placeholder="e.g. VIP" required></div>
+          <div class="form-group"><label>Badge (optional)</label><input type="text" name="badge" class="form-control" placeholder="e.g. Best Value"></div>
+        </div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+          <div class="form-group"><label>Min Deposit ($)</label><input type="number" name="min_deposit" class="form-control" placeholder="100" required></div>
+          <div class="form-group"><label>Max Deposit ($)</label><input type="number" name="max_deposit" class="form-control" placeholder="9999"></div>
+          <div class="form-group"><label>ROI (%)</label><input type="number" name="roi_percent" class="form-control" placeholder="25" required></div>
+          <div class="form-group"><label>Duration (days)</label><input type="number" name="duration_days" class="form-control" placeholder="7" required></div>
+        </div>
+        <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="2" placeholder="Plan description..."></textarea></div>
+        <button type="submit" class="btn btn-gold">+ Add Plan</button>
+      </form>
+    </div>
+
+    <!-- Existing plans -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">Current Plans (<%= plans.length %>)</div>
+      <% if (plans.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:40px;">No plans yet.</p>
+      <% } else { %>
+        <div class="plans-grid">
+          <% plans.forEach(function(p) { %>
+            <div class="plan-card" style="padding:24px;">
+              <form action="/admin/plans/<%= p.id %>/update" method="POST">
+                <div class="form-group"><label>Name</label><input type="text" name="name" class="form-control" value="<%= p.name %>" required></div>
+                <div class="form-row" style="grid-template-columns:1fr 1fr;">
+                  <div class="form-group"><label>Min $</label><input type="number" name="min_deposit" class="form-control" value="<%= p.min_deposit %>" required></div>
+                  <div class="form-group"><label>Max $</label><input type="number" name="max_deposit" class="form-control" value="<%= p.max_deposit || '' %>"></div>
+                </div>
+                <div class="form-row" style="grid-template-columns:1fr 1fr;">
+                  <div class="form-group"><label>ROI %</label><input type="number" name="roi_percent" class="form-control" value="<%= p.roi_percent %>" required></div>
+                  <div class="form-group"><label>Days</label><input type="number" name="duration_days" class="form-control" value="<%= p.duration_days %>" required></div>
+                </div>
+                <div class="form-group"><label>Badge</label><input type="text" name="badge" class="form-control" value="<%= p.badge || '' %>"></div>
+                <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="2"><%= p.description || '' %></textarea></div>
+                <div class="form-group"><label><input type="checkbox" name="active" <%= p.active ? 'checked' : '' %>> Active</label></div>
+                <button type="submit" class="btn btn-gold btn-sm btn-block">💾 Save Changes</button>
+              </form>
+              <form action="/admin/plans/<%= p.id %>/delete" method="POST" onsubmit="return confirm('Delete this plan?')">
+                <button type="submit" class="btn btn-navy btn-sm btn-block" style="margin-top:8px;">🗑 Delete Plan</button>
+              </form>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </main>
+</div>
+</body>
+</html>

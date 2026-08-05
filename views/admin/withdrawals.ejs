@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1>Withdrawals</h1>
+        <div class="sub" style="color:var(--gray);">Process user withdrawal requests</div>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <% if (withdrawals.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:40px;">No withdrawal requests yet.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Date</th><th>User</th><th>Amount</th><th>Currency</th><th>Wallet Address</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <% withdrawals.forEach(function(w) { %>
+              <tr>
+                <td style="font-size:12px;"><%= new Date(w.created_at).toLocaleString() %></td>
+                <td style="font-weight:600;"><%= w.full_name %></td>
+                <td>$<%= w.amount.toLocaleString() %></td>
+                <td><%= w.currency %></td>
+                <td style="font-family:monospace; font-size:11px;"><%= w.wallet_address ? w.wallet_address.substring(0,24)+'...' : '—' %></td>
+                <td><span class="badge badge-<%= w.status %>"><%= w.status %></span></td>
+                <td>
+                  <% if (w.status === 'pending') { %>
+                    <form action="/admin/withdrawals/<%= w.id %>/approve" method="POST" style="display:inline;"><button class="btn btn-gold btn-sm" style="padding:4px 12px;">✓ Approve</button></form>
+                    <form action="/admin/withdrawals/<%= w.id %>/reject" method="POST" style="display:inline;"><button class="btn btn-navy btn-sm" style="padding:4px 12px;">✗ Reject</button></form>
+                  <% } else { %>
+                    <span style="color:var(--gray); font-size:12px;">—</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dash-layout">
+  <%- include('partials/dash-sidebar', { active }) %>
+  <main class="dash-main">
+    <div class="dash-header">
+      <div>
+        <h1>My Profile</h1>
+        <div class="sub">Your account information</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 2fr; gap:24px; align-items:start;">
+      <div class="dash-panel" style="text-align:center;">
+        <div class="dash-avatar" style="width:80px; height:80px; font-size:32px; margin:0 auto 16px;"><%= user.full_name.charAt(0).toUpperCase() %></div>
+        <h3 style="font-size:20px;"><%= user.full_name %></h3>
+        <p style="color:var(--gray); font-size:14px;"><%= user.email %></p>
+        <span class="badge badge-active" style="margin-top:12px; display:inline-block;"><%= user.status %></span>
+      </div>
+
+      <div class="dash-panel">
+        <div class="dash-panel-title">Account Details</div>
+        <div class="info-row"><span class="lbl">Full Name</span><span class="val"><%= user.full_name %></span></div>
+        <div class="info-row"><span class="lbl">Email</span><span class="val"><%= user.email %></span></div>
+        <div class="info-row"><span class="lbl">Phone</span><span class="val"><%= user.phone || '—' %></span></div>
+        <div class="info-row"><span class="lbl">Country</span><span class="val"><%= user.country || '—' %></span></div>
+        <div class="info-row"><span class="lbl">Address</span><span class="val"><%= user.address || '—' %></span></div>
+        <div class="info-row"><span class="lbl">ID Type</span><span class="val"><%= user.id_type || '—' %></span></div>
+        <div class="info-row"><span class="lbl">National ID</span><span class="val"><%= user.national_id || '—' %></span></div>
+        <div class="info-row"><span class="lbl">Member Since</span><span class="val"><%= new Date(user.created_at).toLocaleDateString() %></span></div>
+      </div>
+    </div>
+
+    <div class="stats-grid" style="margin-top:24px;">
+      <div class="stat-card">
+        <div class="stat-icon gold">💵</div>
+        <div class="stat-val">$<%= (user.balance || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Current Balance</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📉</div>
+        <div class="stat-val">$<%= (user.total_deposited || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Total Deposited</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📈</div>
+        <div class="stat-val">$<%= (user.total_earned || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Total Earned</div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

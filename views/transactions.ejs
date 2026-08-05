@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dash-layout">
+  <%- include('partials/dash-sidebar', { active }) %>
+  <main class="dash-main">
+    <div class="dash-header">
+      <div>
+        <h1>Transaction History</h1>
+        <div class="sub">All your deposits, investments, and withdrawals</div>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <% if (transactions.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:40px;">No transactions yet. <a href="/deposit" style="color:var(--gold-dark);">Make your first deposit →</a></p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th><th>Status</th></tr></thead>
+          <tbody>
+            <% transactions.forEach(function(t) { %>
+              <tr>
+                <td><%= new Date(t.created_at).toLocaleString() %></td>
+                <td style="text-transform:capitalize; font-weight:600;"><%= t.type %></td>
+                <td>$<%= t.amount.toLocaleString(undefined,{minimumFractionDigits:2}) %></td>
+                <td style="color:var(--gray);"><%= t.description %></td>
+                <td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </main>
+</div>
+</body>
+</html>

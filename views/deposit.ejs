@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dash-layout">
+  <%- include('partials/dash-sidebar', { active }) %>
+  <main class="dash-main">
+    <div class="dash-header">
+      <div>
+        <h1>Deposit Funds</h1>
+        <div class="sub">Choose a wallet, copy the address, and send your funds</div>
+      </div>
+    </div>
+
+    <% if (req_query_success) { %>
+      <div class="auth-success">✓ Deposit submitted successfully! Your transaction is pending confirmation. You'll be notified once confirmed.</div>
+    <% } %>
+
+    <div class="dash-panel">
+      <div class="dash-panel-title">Step 1: Select a Payment Wallet</div>
+      <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">Choose your preferred cryptocurrency. Click a wallet to select it, then copy the address to send your deposit.</p>
+      
+      <div class="wallet-grid">
+        <% wallets.forEach(function(w, i) { %>
+          <div class="wallet-card" onclick="selectWallet(<%= w.id %>, this)">
+            <div class="wc-head">
+              <div class="wc-currency"><%= w.currency %></div>
+              <div class="wc-network"><%= w.network %></div>
+            </div>
+            <div class="wc-addr" id="addr-<%= w.id %>"><%= w.address %></div>
+            <button type="button" class="copy-btn" onclick="copyAddress(<%= w.id %>, event)">📋 Copy Address</button>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <div class="dash-panel-title">Step 2: Submit Your Deposit</div>
+      <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">After sending your payment to the copied address, submit the details below so we can verify and credit your account.</p>
+      
+      <form action="/deposit" method="POST">
+        <input type="hidden" name="wallet_id" id="selectedWalletId" required>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount (USD) <span style="color:var(--red)">*</span></label>
+            <input type="number" name="amount" class="form-control" placeholder="e.g. 100" min="100" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label>Transaction Hash / TX ID (optional)</label>
+            <input type="text" name="tx_hash" class="form-control" placeholder="Paste your transaction hash">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block" id="submitBtn" disabled>Submit Deposit Request</button>
+        <p style="text-align:center; color:var(--gray); font-size:13px; margin-top:12px;">⚠️ Please select a wallet above before submitting</p>
+      </form>
+    </div>
+
+    <!-- Deposit History -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">Deposit History</div>
+      <% if (deposits.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:20px;">No deposits yet.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Date</th><th>Currency</th><th>Amount</th><th>Address</th><th>Status</th></tr></thead>
+          <tbody>
+            <% deposits.forEach(function(d) { %>
+              <tr>
+                <td><%= new Date(d.created_at).toLocaleDateString() %></td>
+                <td><%= d.currency %></td>
+                <td>$<%= d.amount.toLocaleString() %></td>
+                <td style="font-family:monospace; font-size:12px;"><%= d.wallet_address ? d.wallet_address.substring(0,16) + '...' : '—' %></td>
+                <td><span class="badge badge-<%= d.status %>"><%= d.status %></span></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </main>
+</div>
+
+<script>
+function selectWallet(id, el) {
+  document.querySelectorAll('.wallet-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('selectedWalletId').value = id;
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitBtn').style.opacity = '1';
+}
+
+function copyAddress(id, e) {
+  e.stopPropagation();
+  const addr = document.getElementById('addr-' + id).innerText;
+  navigator.clipboard.writeText(addr).then(() => {
+    const btn = e.target;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+document.getElementById('submitBtn').style.opacity = '0.5';
+</script>
+</body>
+</html>

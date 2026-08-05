@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-card wide">
+    <div class="auth-header">
+      <a href="/" class="logo">Nova<span>Vest</span></a>
+      <h2>Create Your Account</h2>
+      <p>Join 50,000+ investors worldwide. It's free to start.</p>
+    </div>
+
+    <% if (error) { %>
+      <div class="auth-error"><%= error %></div>
+    <% } %>
+
+    <form action="/signup" method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" name="full_name" class="form-control" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Phone Number <span class="req">*</span></label>
+          <input type="tel" name="phone" class="form-control" placeholder="+1 234 567 890" required>
+        </div>
+        <div class="form-group">
+          <label>Country <span class="req">*</span></label>
+          <select name="country" id="countrySelect" class="form-control" required onchange="updateIdField()">
+            <option value="">Select your country</option>
+            <% countries.forEach(function(c) { %>
+              <option value="<%= c.code %>" data-label="<%= c.idLabel %>" data-placeholder="<%= c.idPlaceholder %>"><%= c.name %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" id="nationalIdGroup">
+        <label id="idLabel">National ID</label>
+        <input type="text" name="national_id" id="nationalIdInput" class="form-control" placeholder="Select country first">
+      </div>
+
+      <div class="form-group">
+        <label>Address <span class="req">*</span></label>
+        <input type="text" name="address" class="form-control" placeholder="Your full address" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Password <span class="req">*</span></label>
+          <input type="password" name="password" class="form-control" placeholder="Min 8 characters" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Confirm Password <span class="req">*</span></label>
+          <input type="password" name="confirm_password" class="form-control" placeholder="Re-enter password" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-gold btn-block" style="margin-top:8px;">Create Account →</button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="/login">Login here</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function updateIdField() {
+  const select = document.getElementById('countrySelect');
+  const selected = select.options[select.selectedIndex];
+  const group = document.getElementById('nationalIdGroup');
+  const label = document.getElementById('idLabel');
+  const input = document.getElementById('nationalIdInput');
+  
+  if (select.value) {
+    group.classList.add('show');
+    label.textContent = selected.dataset.label + ' *';
+    input.placeholder = selected.dataset.placeholder;
+    input.required = true;
+  } else {
+    group.classList.remove('show');
+    input.required = false;
+  }
+}
+</script>
+
+</body>
+</html>

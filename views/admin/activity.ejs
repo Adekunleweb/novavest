@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1>Activity Log</h1>
+        <div class="sub" style="color:var(--gray);">All user activities across the platform</div>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <% if (activities.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:40px;">No activity logged yet.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Time</th><th>User</th><th>Email</th><th>Action</th><th>Details</th><th>IP</th></tr></thead>
+          <tbody>
+            <% activities.forEach(function(a) { %>
+              <tr>
+                <td style="font-size:12px;"><%= new Date(a.created_at).toLocaleString() %></td>
+                <td style="font-weight:600;"><%= a.full_name || 'System' %></td>
+                <td style="font-size:12px;"><%= a.email || '—' %></td>
+                <td style="text-transform:capitalize;"><%= a.action %></td>
+                <td style="font-size:13px; color:var(--gray);"><%= a.details %></td>
+                <td style="font-size:11px; color:var(--gray);"><%= a.ip_address || '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </main>
+</div>
+</body>
+</html>

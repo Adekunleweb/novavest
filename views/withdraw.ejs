@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dash-layout">
+  <%- include('partials/dash-sidebar', { active }) %>
+  <main class="dash-main">
+    <div class="dash-header">
+      <div>
+        <h1>Withdraw Funds</h1>
+        <div class="sub">Withdraw your earnings to your wallet</div>
+      </div>
+    </div>
+
+    <% if (req_query_success) { %>
+      <div class="auth-success">✓ Withdrawal request submitted! It will be processed shortly.</div>
+    <% } %>
+    <% if (req_query_error) { %>
+      <div class="auth-error">⚠️ Insufficient balance for this withdrawal amount.</div>
+    <% } %>
+
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="stat-card">
+        <div class="stat-icon gold">💵</div>
+        <div class="stat-val">$<%= (user.balance || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Available Balance</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">✅</div>
+        <div class="stat-val">$<%= (user.total_earned || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></div>
+        <div class="stat-lbl">Total Earned</div>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <div class="dash-panel-title">Request Withdrawal</div>
+      <form action="/withdraw" method="POST">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount (USD) <span style="color:var(--red)">*</span></label>
+            <input type="number" name="amount" class="form-control" placeholder="e.g. 500" min="1" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label>Currency <span style="color:var(--red)">*</span></label>
+            <select name="currency" class="form-control" required>
+              <option value="Bitcoin">Bitcoin (BTC)</option>
+              <option value="Ethereum">Ethereum (ETH)</option>
+              <option value="USDT">USDT</option>
+              <option value="Litecoin">Litecoin (LTC)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Your Wallet Address <span style="color:var(--red)">*</span></label>
+          <input type="text" name="wallet_address" class="form-control" placeholder="Paste your receiving wallet address" required>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block">Submit Withdrawal Request</button>
+      </form>
+    </div>
+
+    <div class="dash-panel">
+      <div class="dash-panel-title">Withdrawal History</div>
+      <% if (withdrawals.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:20px;">No withdrawals yet.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Date</th><th>Amount</th><th>Currency</th><th>Address</th><th>Status</th></tr></thead>
+          <tbody>
+            <% withdrawals.forEach(function(w) { %>
+              <tr>
+                <td><%= new Date(w.created_at).toLocaleDateString() %></td>
+                <td>$<%= w.amount.toLocaleString() %></td>
+                <td><%= w.currency %></td>
+                <td style="font-family:monospace; font-size:12px;"><%= w.wallet_address ? w.wallet_address.substring(0,16) + '...' : '—' %></td>
+                <td><span class="badge badge-<%= w.status %>"><%= w.status %></span></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </main>
+</div>
+</body>
+</html>

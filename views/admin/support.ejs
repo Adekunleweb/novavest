@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1>Customer Support</h1>
+        <div class="sub" style="color:var(--gray);">Respond to each user's messages in real-time</div>
+      </div>
+    </div>
+
+    <div class="admin-chat-layout">
+      <!-- User list -->
+      <div class="chat-user-list" id="userList">
+        <% if (users.length === 0) { %>
+          <div class="chat-empty" style="padding:40px 20px; text-align:center;">
+            <div style="font-size:36px; margin-bottom:12px;">💬</div>
+            <p style="font-size:14px;">No conversations yet.<br>When users send messages, they'll appear here.</p>
+          </div>
+        <% } else { %>
+          <% users.forEach(function(u) { %>
+            <div class="chat-user-item" onclick="openChat(<%= u.id %>)" id="user-item-<%= u.id %>">
+              <div style="flex:1; overflow:hidden;">
+                <div class="cui-name"><%= u.full_name %></div>
+                <div class="cui-msg"><%= u.last_message || '' %></div>
+                <div style="font-size:11px; color:var(--gray); margin-top:4px;"><%= u.email %></div>
+              </div>
+              <% if (u.unread > 0) { %>
+                <span class="cui-unread"><%= u.unread %></span>
+              <% } %>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+
+      <!-- Conversation -->
+      <div class="chat-conversation">
+        <div class="chat-conv-header" id="convHeader" style="display:none;">
+          <div class="name" id="convName"></div>
+          <div class="email" id="convEmail"></div>
+        </div>
+        <div class="chat-conv-body" id="convBody">
+          <div class="chat-empty">
+            <div style="font-size:48px; margin-bottom:16px;">👈</div>
+            <p>Select a conversation to start chatting</p>
+          </div>
+        </div>
+        <div class="chat-conv-input" id="convInput" style="display:none;">
+          <input type="text" id="adminMsgInput" placeholder="Type your reply..." onkeypress="if(event.key==='Enter')adminSend()">
+          <button onclick="adminSend()">Send</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let currentUserId = null;
+
+socket.on('connect', () => {
+  socket.emit('join_admin');
+});
+
+// New message from a user
+socket.on('new_message', (data) => {
+  // refresh user list to show the message
+  if (data.user_id === currentUserId) {
+    addMessage('user', data.message, data.created_at);
+  }
+  // reload user list
+  location.reload();
+});
+
+function openChat(userId) {
+  currentUserId = userId;
+  
+  // highlight selected
+  document.querySelectorAll('.chat-user-item').forEach(i => i.classList.remove('active'));
+  const item = document.getElementById('user-item-' + userId);
+  if (item) item.classList.add('active');
+  
+  // show conversation UI
+  document.getElementById('convHeader').style.display = 'block';
+  document.getElementById('convInput').style.display = 'flex';
+  document.getElementById('convBody').innerHTML = '<div class="chat-empty">Loading messages...</div>';
+  
+  fetch('/admin/support/' + userId + '/messages')
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('convName').textContent = data.user.full_name;
+      document.getElementById('convEmail').textContent = data.user.email;
+      const body = document.getElementById('convBody');
+      body.innerHTML = '';
+      if (data.messages.length === 0) {
+        body.innerHTML = '<div class="chat-empty"><p>No messages yet. Say hello!</p></div>';
+      } else {
+        data.messages.forEach(m => addMessage(m.sender, m.message, m.created_at));
+      }
+      body.scrollTop = body.scrollHeight;
+    });
+  
+  // remove unread badge
+  if (item) {
+    const badge = item.querySelector('.cui-unread');
+    if (badge) badge.remove();
+  }
+}
+
+function addMessage(sender, text, time) {
+  const body = document.getElementById('convBody');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + sender;
+  const timeStr = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  div.innerHTML = '<div class="cm-bubble">' + escapeHtml(text) + '</div><div class="cm-time">' + (sender === 'admin' ? 'Support · ' : '') + timeStr + '</div>';
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function adminSend() {
+  const input = document.getElementById('adminMsgInput');
+  const msg = input.value.trim();
+  if (!msg || !currentUserId) return;
+  
+  fetch('/admin/support/' + currentUserId + '/send', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'message=' + encodeURIComponent(msg)
+  }).then(r => r.json()).then(data => {
+    if (data.success) {
+      addMessage('admin', msg, new Date().toISOString());
+      input.value = '';
+    }
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dash-layout">
+  <%- include('partials/dash-sidebar', { active }) %>
+  <main class="dash-main">
+    <div class="dash-header">
+      <div>
+        <h1>Investment Plans</h1>
+        <div class="sub">Choose a plan and grow your wealth</div>
+      </div>
+    </div>
+
+    <% if (req_query_success) { %>
+      <div class="auth-success">✓ Investment created successfully! Your plan is now active.</div>
+    <% } %>
+    <% if (req_query_error) { %>
+      <div class="auth-error">⚠️ Invalid amount for the selected plan. Please check the minimum and maximum limits.</div>
+    <% } %>
+
+    <div class="plans-grid">
+      <% plans.forEach(function(p, i) { %>
+        <div class="plan-card <%= i === 1 ? 'featured' : '' %>">
+          <% if (p.badge) { %><div class="plan-badge"><%= p.badge %></div><% } %>
+          <div class="plan-name"><%= p.name %></div>
+          <div class="plan-min">Minimum: $<%= p.min_deposit.toLocaleString() %></div>
+          <div class="plan-roi"><%= p.roi_percent %><span>%</span></div>
+          <div class="plan-duration">Return after <%= p.duration_days %> days</div>
+          <p style="font-size:14px; color:var(--gray); margin-bottom:20px;"><%= p.description %></p>
+          <form action="/invest" method="POST">
+            <input type="hidden" name="plan_id" value="<%= p.id %>">
+            <div class="form-group">
+              <label>Investment Amount (USD)</label>
+              <input type="number" name="amount" class="form-control" placeholder="Min $<%= p.min_deposit %>" min="<%= p.min_deposit %>" step="0.01" required>
+            </div>
+            <button type="submit" class="btn btn-gold btn-block">Invest in <%= p.name %></button>
+          </form>
+        </div>
+      <% }) %>
+    </div>
+
+    <div class="dash-panel" style="margin-top:24px;">
+      <div class="dash-panel-title">Your Investments</div>
+      <% if (investments.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:20px;">You have no investments yet. Choose a plan above to get started.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>ROI</th><th>Expected Return</th><th>End Date</th><th>Status</th></tr></thead>
+          <tbody>
+            <% investments.forEach(function(inv) { %>
+              <tr>
+                <td><%= new Date(inv.created_at).toLocaleDateString() %></td>
+                <td>Plan #<%= inv.plan_id %></td>
+                <td>$<%= inv.amount.toLocaleString() %></td>
+                <td><%= inv.roi_percent %>%</td>
+                <td style="color:var(--green); font-weight:600;">$<%= (inv.expected_return || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></td>
+                <td><%= inv.end_date ? new Date(inv.end_date).toLocaleDateString() : '—' %></td>
+                <td><span class="badge badge-<%= inv.status %>"><%= inv.status %></span></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </main>
+</div>
+</body>
+</html>
