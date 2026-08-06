@@ -147,7 +147,8 @@ db.serialize(() => {
   )`);
 
   // Seed default admin
-  bcrypt.hash('admin123', 10, (err, hash) => {
+  const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
+  bcrypt.hash(adminPass, 10, (err, hash) => {
     if (err) return;
     db.run(`INSERT OR IGNORE INTO admins (username, password) VALUES (?, ?)`, ['admin', hash]);
   });
