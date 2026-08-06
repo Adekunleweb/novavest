@@ -531,9 +531,38 @@ app.post('/admin/generate-transactions/batch', requireAdmin, (req, res) => {
     if (!user) return res.redirect('/admin/generate-transactions');
 
     const currencies = ['Bitcoin', 'USDT', 'Ethereum', 'Litecoin'];
-    const depositDescs = ['Crypto deposit via USDT (TRC-20)', 'Crypto deposit via Bitcoin', 'Crypto deposit via Ethereum', 'Deposit confirmed', 'Wallet deposit - USDT'];
-    const withdrawalDescs = ['Withdrawal to external wallet', 'Withdrawal processed - USDT', 'Withdrawal to Bitcoin wallet', 'Withdrawal completed'];
-    const interestDescs = ['Investment ROI payout - Starter Plan', 'Investment ROI payout - Professional Plan', 'Investment ROI payout - Elite Plan', 'Investment ROI payout - Quick Return Plan', 'Daily interest payout', 'Plan maturity payout'];
+    const depositDescs = [
+      'Crypto deposit via USDT (TRC-20)', 'Crypto deposit via Bitcoin', 'Crypto deposit via Ethereum (ERC-20)', 'Crypto deposit via Litecoin',
+      'Deposit confirmed - USDT TRC-20', 'Deposit confirmed - BTC network', 'Wallet deposit - USDT', 'Wallet deposit - Bitcoin',
+      'Deposit via Bitcoin network', 'Deposit via Ethereum network', 'USDT deposit (TRC-20)', 'BTC deposit confirmed',
+      'ETH deposit confirmed', 'LTC deposit confirmed', 'Crypto wallet deposit', 'Incoming transfer - USDT',
+      'Incoming transfer - BTC', 'Blockchain deposit confirmed', 'Deposit credited to account', 'Crypto funding confirmed',
+      'Deposit from external wallet', 'USDT TRC-20 deposit', 'Bitcoin network deposit', 'Ethereum network deposit',
+      'Top-up deposit - USDT', 'Account funding - BTC', 'Deposit received and confirmed', 'Wallet top-up confirmed',
+      'Crypto deposit - 1 confirmation', 'Deposit verified on blockchain', 'Account funding via USDT', 'Account funding via Bitcoin'
+    ];
+    const withdrawalDescs = [
+      'Withdrawal to external wallet', 'Withdrawal processed - USDT', 'Withdrawal to Bitcoin wallet', 'Withdrawal completed',
+      'Withdrawal to external BTC wallet', 'Withdrawal to USDT wallet (TRC-20)', 'Withdrawal to Ethereum wallet', 'Withdrawal to Litecoin wallet',
+      'Withdrawal processed successfully', 'Withdrawal to crypto wallet', 'Funds withdrawal - USDT', 'Funds withdrawal - BTC',
+      'Withdrawal request approved', 'Withdrawal sent to wallet', 'Withdrawal to external wallet (BTC)', 'Withdrawal to external wallet (USDT)',
+      'Payout to wallet address', 'Withdrawal confirmed - BTC network', 'Withdrawal confirmed - USDT TRC-20', 'Withdrawal confirmed - ETH network',
+      'Withdrawal to blockchain wallet', 'Profit withdrawal to wallet', 'Withdrawal transfer completed', 'Withdrawal to personal wallet',
+      'Withdrawal processed - BTC', 'Withdrawal to cold wallet', 'Withdrawal to hardware wallet', 'Funds transferred to external wallet',
+      'Withdrawal to designated wallet', 'Withdrawal payout confirmed', 'Withdrawal to crypto address', 'Withdrawal settled'
+    ];
+    const interestDescs = [
+      'Investment ROI payout - Starter Plan', 'Investment ROI payout - Professional Plan', 'Investment ROI payout - Elite Plan', 'Investment ROI payout - Quick Return Plan',
+      'Daily interest payout', 'Plan maturity payout', 'ROI earnings - Starter Plan', 'ROI earnings - Professional Plan',
+      'ROI earnings - Elite Plan', 'ROI earnings - Quick Return Plan', 'Daily ROI credit', 'Weekly interest payout',
+      'Investment return - Starter Plan', 'Investment return - Professional Plan', 'Investment return - Elite Plan', 'Investment return - Quick Return Plan',
+      'Plan interest payout', 'Maturity payout - Professional Plan', 'Maturity payout - Elite Plan', 'Maturity payout - Quick Return Plan',
+      'Maturity payout - Starter Plan', 'ROI dividend payout', 'Investment profit credit', 'Daily trading profit',
+      'Interest earned - Starter Plan', 'Interest earned - Professional Plan', 'Interest earned - Elite Plan', 'Interest earned - Quick Return Plan',
+      'Plan completion payout', 'Investment yield credit', 'ROI maturity bonus', 'Profit sharing payout',
+      'Compound interest payout', 'Investment growth credit', 'Plan ROI settlement', 'Daily earnings credit',
+      'Trading profit payout', 'Portfolio ROI return', 'Investment maturity settlement', 'ROI payout - plan completed'
+    ];
 
     function randomAmount() {
       return Math.round((minAmt + Math.random() * (maxAmt - minAmt)) * 100) / 100;
