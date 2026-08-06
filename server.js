@@ -81,14 +81,15 @@ app.get('/contact', (req, res) => {
 // Signup
 app.get('/signup', (req, res) => {
   if (req.session.userId) return res.redirect('/dashboard');
-  res.render('signup', { countries, error: null, title: 'Sign Up - NovaVest' });
+  const ref = req.query.ref || '';
+  res.render('signup', { countries, error: null, title: 'Sign Up - NovaVest', ref });
 });
 
 app.post('/signup', (req, res) => {
-  const { full_name, email, phone, password, confirm_password, country, address, national_id } = req.body;
+  const { full_name, email, phone, password, confirm_password, country, address, national_id, ref } = req.body;
   
   if (password !== confirm_password) {
-    return res.render('signup', { countries, error: 'Passwords do not match', title: 'Sign Up - NovaVest' });
+    return res.render('signup', { countries, error: 'Passwords do not match', title: 'Sign Up - NovaVest', ref: ref || '' });
   }
   
   const countryData = countries.find(c => c.code === country);
@@ -96,20 +97,39 @@ app.post('/signup', (req, res) => {
 
   db.get(`SELECT id FROM users WHERE email = ?`, [email], (err, existing) => {
     if (existing) {
-      return res.render('signup', { countries, error: 'Email already registered. Please login.', title: 'Sign Up - NovaVest' });
+      return res.render('signup', { countries, error: 'Email already registered. Please login.', title: 'Sign Up - NovaVest', ref: ref || '' });
     }
     bcrypt.hash(password, 10, (err, hash) => {
-      db.run(`INSERT INTO users (full_name, email, phone, password, country, address, national_id, id_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [full_name, email, phone, hash, countryData ? countryData.name : country, address, national_id, idType],
+      // Generate a unique referral code for this new user
+      const referralCode = 'NV' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+      
+      db.run(`INSERT INTO users (full_name, email, phone, password, country, address, national_id, id_type, balance, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1000, ?, ?)`,
+        [full_name, email, phone, hash, countryData ? countryData.name : country, address, national_id, idType, referralCode, ref || null],
         function(err) {
           if (err) {
-            return res.render('signup', { countries, error: 'Error creating account. Try again.', title: 'Sign Up - NovaVest' });
+            return res.render('signup', { countries, error: 'Error creating account. Try again.', title: 'Sign Up - NovaVest', ref: ref || '' });
           }
           const userId = this.lastID;
           req.session.userId = userId;
           req.session.userName = full_name;
           logActivity(userId, 'signup', `New user registered: ${full_name} (${email})`, req.ip);
           mailer.notifySignup({ full_name, email, country: countryData ? countryData.name : country });
+
+          // Add $1,000 Sign Up Bonus transaction
+          db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, 'bonus', 1000, 'Sign Up Bonus', 'completed')`, [userId]);
+
+          // If referred by someone, give referrer $700 bonus and log referral transaction
+          if (ref) {
+            db.get(`SELECT * FROM users WHERE referral_code = ?`, [ref], (e, referrer) => {
+              if (referrer && referrer.id !== userId) {
+                // Give referrer $700 bonus
+                db.run(`UPDATE users SET balance = balance + 700, total_earned = total_earned + 700 WHERE id = ?`, [referrer.id]);
+                db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, 'bonus', 700, 'Referral Bonus', 'completed')`, [referrer.id]);
+                logActivity(referrer.id, 'referral', `Referral bonus credited: ${full_name} signed up with your link`, null);
+              }
+            });
+          }
+
           res.redirect('/dashboard');
         });
     });
@@ -289,6 +309,22 @@ app.get('/transactions', requireUser, (req, res) => {
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC`, [userId], (err, transactions) => {
       res.render('transactions', { user, transactions: transactions||[], active: 'transactions', title: 'Transactions - NovaVest' });
+    });
+  });
+});
+
+// Referral page
+app.get('/referral', requireUser, (req, res) => {
+  const userId = req.session.userId;
+  db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+    const baseUrl = process.env.FRONTEND_URL || `http://${req.headers.host}`;
+    const referralLink = `${baseUrl}/signup?ref=${user.referral_code}`;
+    // Count referrals
+    db.all(`SELECT full_name, created_at FROM users WHERE referred_by = ? ORDER BY created_at DESC`, [user.referral_code], (err, referrals) => {
+      db.all(`SELECT amount FROM transactions WHERE user_id = ? AND type = 'bonus' AND description = 'Referral Bonus'`, [userId], (err, refBonuses) => {
+        const totalReferralEarnings = (refBonuses || []).reduce((sum, b) => sum + b.amount, 0);
+        res.render('referral', { user, referralLink, referrals: referrals || [], totalReferralEarnings, active: 'referral', title: 'Referral Program - NovaVest' });
+      });
     });
   });
 });

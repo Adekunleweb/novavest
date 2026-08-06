@@ -29,6 +29,8 @@ db.serialize(() => {
     balance REAL DEFAULT 0,
     total_deposited REAL DEFAULT 0,
     total_earned REAL DEFAULT 0,
+    referral_code TEXT,
+    referred_by INTEGER,
     is_admin INTEGER DEFAULT 0,
     status TEXT DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -149,11 +151,20 @@ db.serialize(() => {
     db.run(`INSERT OR IGNORE INTO admins (username, password) VALUES (?, ?)`, ['admin', hash]);
   });
 
+  // Migrations for existing databases - add new columns if they don't exist
+  db.run(`ALTER TABLE users ADD COLUMN referral_code TEXT`, () => {});
+  db.run(`ALTER TABLE users ADD COLUMN referred_by INTEGER`, () => {});
+
   // Seed investment plans
   db.run(`INSERT OR IGNORE INTO plans (id, name, min_deposit, max_deposit, roi_percent, duration_days, description, badge) VALUES
     (1, 'Starter', 100, 999, 25, 7, 'Perfect entry plan for new investors. Deposit from $100 and earn a guaranteed 25% return in just 7 days. Fast, reliable, and beginner-friendly.', 'Popular'),
     (2, 'Professional', 1000, 9999, 60, 14, 'For serious investors ready to scale. Deposit $1,000 - $9,999 and watch your portfolio grow by 60% in 14 days with our diversified trading strategies.', 'Best Value'),
-    (3, 'Elite', 10000, 100000, 150, 30, 'The ultimate wealth-building plan. From $10,000, earn a massive 150% ROI in 30 days with VIP portfolio management and priority support.', 'Premium')`);
+    (3, 'Elite', 10000, 100000, 150, 30, 'The ultimate wealth-building plan. From $10,000, earn a massive 150% ROI in 30 days with VIP portfolio management and priority support.', 'Premium'),
+    (4, 'Quick Return', 200, 1999, 40, 2, 'Lightning-fast returns for investors who want quick results. Deposit from $200 and earn 40% in just 24-48 hours. Perfect for short-term gains with minimal commitment.', 'Fast Cash')`);
+
+  // Ensure plan 4 exists for existing databases (INSERT OR IGNORE)
+  db.run(`INSERT OR IGNORE INTO plans (id, name, min_deposit, max_deposit, roi_percent, duration_days, description, badge) VALUES
+    (4, 'Quick Return', 200, 1999, 40, 2, 'Lightning-fast returns for investors who want quick results. Deposit from $200 and earn 40% in just 24-48 hours. Perfect for short-term gains with minimal commitment.', 'Fast Cash')`);
 
   // Seed default wallets
   db.run(`INSERT OR IGNORE INTO wallets (id, currency, network, address, active) VALUES

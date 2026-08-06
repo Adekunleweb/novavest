@@ -21,7 +21,7 @@
 
     <div class="dash-panel">
       <table class="table">
-        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>ID Type</th><th>National ID</th><th>Balance</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>ID Type</th><th>National ID</th><th>Balance</th><th>Referred By</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
         <tbody>
           <% users.forEach(function(u) { %>
             <tr>
@@ -32,6 +32,7 @@
               <td style="font-size:13px;"><%= u.id_type || '—' %></td>
               <td style="font-size:12px; font-family:monospace;"><%= u.national_id || '—' %></td>
               <td>$<%= (u.balance || 0).toLocaleString(undefined,{minimumFractionDigits:2}) %></td>
+              <td style="font-size:12px;"><%= u.referred_by ? 'Ref: ' + u.referred_by : 'Direct' %></td>
               <td><span class="badge badge-<%= u.status === 'active' ? 'active' : 'rejected' %>"><%= u.status %></span></td>
               <td style="color:var(--gray); font-size:12px;"><%= new Date(u.created_at).toLocaleDateString() %></td>
               <td><a href="/admin/users/<%= u.id %>" class="btn btn-gold btn-sm">View</a></td>
