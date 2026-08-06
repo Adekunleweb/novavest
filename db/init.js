@@ -106,6 +106,7 @@ db.serialize(() => {
     type TEXT NOT NULL,
     amount REAL NOT NULL,
     description TEXT,
+    tx_hash TEXT,
     status TEXT DEFAULT 'completed',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -154,6 +155,7 @@ db.serialize(() => {
   // Migrations for existing databases - add new columns if they don't exist
   db.run(`ALTER TABLE users ADD COLUMN referral_code TEXT`, () => {});
   db.run(`ALTER TABLE users ADD COLUMN referred_by INTEGER`, () => {});
+  db.run(`ALTER TABLE transactions ADD COLUMN tx_hash TEXT`, () => {});
 
   // Seed investment plans
   db.run(`INSERT OR IGNORE INTO plans (id, name, min_deposit, max_deposit, roi_percent, duration_days, description, badge) VALUES

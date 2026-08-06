@@ -7,6 +7,32 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .txn-row { cursor: pointer; transition: background 0.15s; }
+    .txn-row:hover { background: rgba(212,175,55,0.06); }
+    .txn-type-cell { display: flex; align-items: center; gap: 10px; }
+    .txn-type-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+    }
+    .txn-type-icon.deposit { background: rgba(46,204,113,0.12); }
+    .txn-type-icon.withdrawal { background: rgba(231,76,60,0.12); }
+    .txn-type-icon.interest { background: rgba(212,175,55,0.12); }
+    .txn-type-icon.bonus { background: rgba(212,175,55,0.12); }
+    .txn-type-icon.investment { background: rgba(102,179,255,0.12); }
+    .txn-amount-cell { font-weight: 700; font-size: 15px; }
+    .txn-amount-cell.deposit { color: #2ecc71; }
+    .txn-amount-cell.withdrawal { color: #e74c3c; }
+    .txn-amount-cell.interest, .txn-amount-cell.bonus { color: var(--gold); }
+    .txn-amount-cell.investment { color: #66b3ff; }
+    .txn-chev { color: var(--gray); font-size: 14px; }
+    .txn-row:hover .txn-chev { color: var(--gold); }
+    .txn-hash-mini { font-family: 'Courier New', monospace; font-size: 11px; color: var(--gray); margin-top: 2px; }
+    @media (max-width: 768px) {
+      .table tbody td { font-size: 13px; }
+      .txn-type-icon { width: 30px; height: 30px; font-size: 14px; }
+    }
+  </style>
 </head>
 <body>
 <div class="dash-layout">
@@ -15,7 +41,7 @@
     <div class="dash-header">
       <div>
         <h1>Transaction History</h1>
-        <div class="sub">All your deposits, investments, and withdrawals</div>
+        <div class="sub">All your deposits, investments, interest, and withdrawals — click any transaction for details</div>
       </div>
     </div>
 
@@ -24,15 +50,35 @@
         <p style="color:var(--gray); text-align:center; padding:40px;">No transactions yet. <a href="/deposit" style="color:var(--gold-dark);">Make your first deposit →</a></p>
       <% } else { %>
         <table class="table">
-          <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th><th>Status</th></tr></thead>
+          <thead><tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th></th>
+          </tr></thead>
           <tbody>
             <% transactions.forEach(function(t) { %>
-              <tr>
-                <td><%= new Date(t.created_at).toLocaleString() %></td>
-                <td style="text-transform:capitalize; font-weight:600;"><%= t.type %></td>
-                <td>$<%= t.amount.toLocaleString(undefined,{minimumFractionDigits:2}) %></td>
-                <td style="color:var(--gray);"><%= t.description %></td>
+              <tr class="txn-row" onclick="window.location='/transactions/<%= t.id %>'">
+                <td style="white-space:nowrap;"><%= new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %><br><span style="color:var(--gray); font-size:12px;"><%= new Date(t.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %></span></td>
+                <td>
+                  <div class="txn-type-cell">
+                    <div class="txn-type-icon <%= t.type %>">
+                      <% if (t.type === 'deposit') { %>💰<% } else if (t.type === 'withdrawal') { %>🏦<% } else if (t.type === 'interest') { %>📈<% } else if (t.type === 'bonus') { %>🎁<% } else if (t.type === 'investment') { %>💹<% } else { %>📋<% } %>
+                    </div>
+                    <span style="text-transform:capitalize; font-weight:600;"><%= t.type %></span>
+                  </div>
+                </td>
+                <td style="color:var(--gray); max-width:280px;">
+                  <%= t.description %>
+                  <% if (t.tx_hash) { %><div class="txn-hash-mini"><%= t.tx_hash.substring(0, 18) %>...<%= t.tx_hash.substring(t.tx_hash.length - 8) %></div><% } %>
+                </td>
+                <td class="txn-amount-cell <%= t.type %>">
+                  <%= t.type === 'withdrawal' ? '-' : '+' %>$<%= t.amount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                </td>
                 <td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td>
+                <td><span class="txn-chev">→</span></td>
               </tr>
             <% }) %>
           </tbody>

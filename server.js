@@ -116,7 +116,7 @@ app.post('/signup', (req, res) => {
           mailer.notifySignup({ full_name, email, country: countryData ? countryData.name : country });
 
           // Add $1,000 Sign Up Bonus transaction
-          db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, 'bonus', 1000, 'Sign Up Bonus', 'completed')`, [userId]);
+          db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'bonus', 1000, 'Sign Up Bonus', 'completed', ?)`, [userId, generateTxHash('bonus')]);
 
           // If referred by someone, give referrer $700 bonus and log referral transaction
           if (ref) {
@@ -124,7 +124,7 @@ app.post('/signup', (req, res) => {
               if (referrer && referrer.id !== userId) {
                 // Give referrer $700 bonus
                 db.run(`UPDATE users SET balance = balance + 700, total_earned = total_earned + 700 WHERE id = ?`, [referrer.id]);
-                db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, 'bonus', 700, 'Referral Bonus', 'completed')`, [referrer.id]);
+                db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'bonus', 700, 'Referral Bonus', 'completed', ?)`, [referrer.id, generateTxHash('bonus')]);
                 logActivity(referrer.id, 'referral', `Referral bonus credited: ${full_name} signed up with your link`, null);
               }
             });
@@ -219,8 +219,8 @@ app.post('/deposit', requireUser, (req, res) => {
       [userId, wallet_id, wallet.currency, amount, wallet.address, tx_hash],
       function(err) {
         const depositId = this.lastID;
-        db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, 'deposit', ?, ?, 'pending')`,
-          [userId, amount, `Deposit via ${wallet.currency} - pending confirmation`]);
+        db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'deposit', ?, ?, 'pending', ?)`,
+          [userId, amount, `Deposit via ${wallet.currency} - pending confirmation`, tx_hash]);
         logActivity(userId, 'deposit', `Deposit request: $${amount} via ${wallet.currency}`, req.ip);
         db.get(`SELECT * FROM users WHERE id = ?`, [userId], (e, user) => {
           if (user) mailer.notifyDepositSubmitted(user, { amount, currency: wallet.currency, network: wallet.network, tx_hash });
@@ -261,8 +261,8 @@ app.post('/invest', requireUser, (req, res) => {
     db.run(`INSERT INTO investments (user_id, plan_id, amount, roi_percent, expected_return, end_date, status) VALUES (?, ?, ?, ?, ?, ?, 'active')`,
       [userId, plan_id, amt, plan.roi_percent, expectedReturn, endDate],
       function(err) {
-        db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, 'investment', ?, ?, 'completed')`,
-          [userId, amt, `Invested in ${plan.name} plan - ${plan.roi_percent}% ROI in ${plan.duration_days} days`]);
+        db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'investment', ?, ?, 'completed', ?)`,
+          [userId, amt, `Invested in ${plan.name} plan - ${plan.roi_percent}% ROI in ${plan.duration_days} days`, generateTxHash('investment')]);
         logActivity(userId, 'invest', `Invested $${amt} in ${plan.name} plan`, req.ip);
         db.get(`SELECT * FROM users WHERE id = ?`, [userId], (e, user) => {
           if (user) mailer.notifyInvestmentCreated(user, { amount: amt }, { name: plan.name, roi: plan.roi_percent, duration_days: plan.duration_days });
@@ -294,8 +294,9 @@ app.post('/withdraw', requireUser, (req, res) => {
     db.run(`INSERT INTO withdrawals (user_id, amount, wallet_address, currency, status) VALUES (?, ?, ?, ?, 'pending')`,
       [userId, amt, wallet_address, currency],
       function(err) {
-        db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, 'withdrawal', ?, ?, 'pending')`,
-          [userId, amt, `Withdrawal request to ${wallet_address}`]);
+        const wHash = generateTxHash('withdrawal');
+        db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'withdrawal', ?, ?, 'pending', ?)`,
+          [userId, amt, `Withdrawal request to ${wallet_address}`, wHash]);
         logActivity(userId, 'withdraw', `Withdrawal request: $${amt}`, req.ip);
         mailer.notifyWithdrawalSubmitted(user, { amount: amt, currency, wallet_address });
         res.redirect('/withdraw?success=1');
@@ -309,6 +310,80 @@ app.get('/transactions', requireUser, (req, res) => {
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC`, [userId], (err, transactions) => {
       res.render('transactions', { user, transactions: transactions||[], active: 'transactions', title: 'Transactions - NovaVest' });
+    });
+  });
+});
+
+// Generate a realistic blockchain-style transaction hash
+function generateTxHash(type) {
+  const prefix = type === 'deposit' ? '0x' : type === 'withdrawal' ? '0x' : 'NV';
+  const chars = '0123456789abcdef';
+  let hash = prefix;
+  const length = type === 'interest' || type === 'bonus' ? 48 : 64;
+  for (let i = 0; i < length; i++) {
+    hash += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return hash;
+}
+
+// Transaction detail page — shows a full receipt like a blockchain explorer
+app.get('/transactions/:id', requireUser, (req, res) => {
+  const userId = req.session.userId;
+  const txnId = req.params.id;
+
+  db.get(`SELECT * FROM transactions WHERE id = ? AND user_id = ?`, [txnId, userId], (err, txn) => {
+    if (!txn) {
+      return res.status(404).render('error', { message: 'Transaction not found', title: 'Not Found - NovaVest' });
+    }
+
+    db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+      // Generate tx_hash if missing (for older transactions)
+      let txHash = txn.tx_hash;
+      if (!txHash) {
+        txHash = generateTxHash(txn.type);
+        db.run(`UPDATE transactions SET tx_hash = ? WHERE id = ?`, [txHash, txn.id]);
+        txn.tx_hash = txHash;
+      }
+
+      // Build block / confirmation info for realism
+      const txnDate = new Date(txn.created_at);
+      const now = new Date();
+      const hoursDiff = Math.abs(now - txnDate) / 36e5;
+      const confirmations = Math.min(999, Math.floor(hoursDiff * 6) + 3); // ~6 conf per hour
+      const blockHeight = 850000 + Math.floor(Math.abs(now - txnDate) / 60000); // ~1 block per min
+
+      // Determine network & from/to addresses based on type
+      let network = 'TRC-20 (Tron)';
+      let fromAddr = 'TQn9Y2khEsLJW7B' + txn.tx_hash?.substring(2, 12).toUpperCase() || 'TQn9Y2khEsLJW7B';
+      let toAddr = 'TNzK9h2xWpF3mQd' + Math.random().toString(36).substring(2, 12).toUpperCase();
+      let gasFee = 0;
+
+      if (txn.type === 'deposit') {
+        network = ['TRC-20 (Tron)', 'Bitcoin (BTC)', 'ERC-20 (Ethereum)', 'Litecoin (LTC)'][Math.floor(Math.random() * 4)];
+        fromAddr = 'External Wallet';
+        toAddr = user.email;
+        gasFee = network.includes('Bitcoin') ? 0.00001234 : network.includes('Ethereum') ? 0.00234567 : 0.00000123;
+      } else if (txn.type === 'withdrawal') {
+        network = ['TRC-20 (Tron)', 'Bitcoin (BTC)', 'ERC-20 (Ethereum)'][Math.floor(Math.random() * 3)];
+        fromAddr = user.email;
+        toAddr = 'External Wallet';
+        gasFee = network.includes('Bitcoin') ? 0.00002345 : network.includes('Ethereum') ? 0.00345678 : 0.00000234;
+      } else if (txn.type === 'interest' || txn.type === 'bonus' || txn.type === 'investment') {
+        network = 'Internal Transfer';
+        fromAddr = 'NovaVest Investment Pool';
+        toAddr = user.email;
+        gasFee = 0;
+      }
+
+      // Format the amount nicely
+      const formattedAmount = parseFloat(txn.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      res.render('transaction-detail', {
+        user, txn, txHash, confirmations, blockHeight, network,
+        fromAddr, toAddr, gasFee, formattedAmount,
+        active: 'transactions',
+        title: `Transaction ${txHash.substring(0, 12)}... - NovaVest`
+      });
     });
   });
 });
@@ -471,9 +546,10 @@ app.post('/admin/users/:id/generate-transaction', requireAdmin, (req, res) => {
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     if (!user) return res.redirect('/admin/users');
 
-    // Insert the transaction
-    db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, ?, ?, ?, ?)`,
-      [userId, type, amt, txnDesc, txnStatus], function() {
+    // Insert the transaction with a blockchain-style hash
+    const txHash = generateTxHash(type);
+    db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, type, amt, txnDesc, txnStatus, txHash], function() {
 
       // Adjust user balance based on transaction type
       if (doAdjust) {
@@ -584,11 +660,12 @@ app.post('/admin/generate-transactions/batch', requireAdmin, (req, res) => {
       const desc = depositDescs[Math.floor(Math.random() * depositDescs.length)];
       const curr = currencies[Math.floor(Math.random() * currencies.length)];
       const dateStr = randomDate();
-      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, created_at) VALUES (?, 'deposit', ?, ?, 'completed', ?)`,
-        [userId, amt, desc, dateStr]);
+      const dHash = generateTxHash('deposit');
+      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash, created_at) VALUES (?, 'deposit', ?, ?, 'completed', ?, ?)`,
+        [userId, amt, desc, dHash, dateStr]);
       if (doAdjust) {
         db.run(`INSERT INTO deposits (user_id, currency, amount, status, tx_hash, created_at) VALUES (?, ?, ?, 'completed', ?, ?)`,
-          [userId, curr, amt, 'TXN' + Math.random().toString(36).substring(2, 12).toUpperCase(), dateStr]);
+          [userId, curr, amt, dHash, dateStr]);
         totalDeposited += amt;
       }
     }
@@ -599,8 +676,9 @@ app.post('/admin/generate-transactions/batch', requireAdmin, (req, res) => {
       const desc = withdrawalDescs[Math.floor(Math.random() * withdrawalDescs.length)];
       const curr = currencies[Math.floor(Math.random() * currencies.length)];
       const dateStr = randomDate();
-      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, created_at) VALUES (?, 'withdrawal', ?, ?, 'completed', ?)`,
-        [userId, amt, desc, dateStr]);
+      const wHash = generateTxHash('withdrawal');
+      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash, created_at) VALUES (?, 'withdrawal', ?, ?, 'completed', ?, ?)`,
+        [userId, amt, desc, wHash, dateStr]);
       if (doAdjust) {
         db.run(`INSERT INTO withdrawals (user_id, amount, currency, wallet_address, status, created_at) VALUES (?, ?, ?, ?, 'completed', ?)`,
           [userId, amt, curr, user.email, dateStr]);
@@ -613,8 +691,9 @@ app.post('/admin/generate-transactions/batch', requireAdmin, (req, res) => {
       const amt = randomAmount();
       const desc = interestDescs[Math.floor(Math.random() * interestDescs.length)];
       const dateStr = randomDate();
-      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, created_at) VALUES (?, 'interest', ?, ?, 'completed', ?)`,
-        [userId, amt, desc, dateStr]);
+      const iHash = generateTxHash('interest');
+      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash, created_at) VALUES (?, 'interest', ?, ?, 'completed', ?, ?)`,
+        [userId, amt, desc, iHash, dateStr]);
       if (doAdjust) {
         totalInterest += amt;
       }

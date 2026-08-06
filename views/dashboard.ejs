@@ -72,18 +72,25 @@
 
       <!-- Recent Transactions -->
       <div class="dash-panel">
-        <div class="dash-panel-title">Recent Transactions</div>
+        <div class="dash-panel-title">Recent Transactions <a href="/transactions" style="float:right; font-size:13px; color:var(--gold-dark); text-decoration:none;">View All →</a></div>
         <% if (transactions.length === 0) { %>
           <p style="color:var(--gray); text-align:center; padding:20px;">No transactions yet.</p>
         <% } else { %>
           <table class="table">
-            <thead><tr><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+            <thead><tr><th>Type</th><th>Description</th><th>Amount</th><th>Status</th><th></th></tr></thead>
             <tbody>
               <% transactions.forEach(function(t) { %>
-                <tr>
-                  <td style="text-transform:capitalize;"><%= t.type %></td>
-                  <td>$<%= t.amount.toLocaleString() %></td>
+                <tr style="cursor:pointer; transition:background 0.15s;" onmouseover="this.style.background='rgba(212,175,55,0.06)'" onmouseout="this.style.background=''" onclick="window.location='/transactions/<%= t.id %>'">
+                  <td style="text-transform:capitalize; font-weight:600;">
+                    <% if (t.type === 'deposit') { %>💰<% } else if (t.type === 'withdrawal') { %>🏦<% } else if (t.type === 'interest') { %>📈<% } else if (t.type === 'bonus') { %>🎁<% } else if (t.type === 'investment') { %>💹<% } else { %>📋<% } %>
+                    <%= t.type %>
+                  </td>
+                  <td style="color:var(--gray); font-size:13px; max-width:200px;"><%= t.description %></td>
+                  <td style="font-weight:700; color:<%= t.type === 'withdrawal' ? '#e74c3c' : t.type === 'deposit' ? '#2ecc71' : 'var(--gold)' %>;">
+                    <%= t.type === 'withdrawal' ? '-' : '+' %>$<%= t.amount.toLocaleString(undefined,{minimumFractionDigits:2}) %>
+                  </td>
                   <td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td>
+                  <td style="color:var(--gray);">→</td>
                 </tr>
               <% }) %>
             </tbody>
