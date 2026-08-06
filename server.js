@@ -439,6 +439,7 @@ app.get('/admin/users/:id', requireAdmin, (req, res) => {
                 user, deposits: deposits||[], investments: investments||[], 
                 transactions: transactions||[], withdrawals: withdrawals||[], 
                 activities: activities||[], active: 'users', adminName: req.session.adminName,
+                req_query_generated: req.query.generated,
                 title: `User: ${user?.full_name} - NovaVest Admin`
               });
             });
@@ -455,6 +456,150 @@ app.post('/admin/users/:id/status', requireAdmin, (req, res) => {
   const { status } = req.body;
   db.run(`UPDATE users SET status = ? WHERE id = ?`, [status, userId], () => {
     res.redirect('/admin/users/' + userId);
+  });
+});
+
+// Admin - generate transaction for a user (deposit, withdrawal, interest)
+app.post('/admin/users/:id/generate-transaction', requireAdmin, (req, res) => {
+  const userId = req.params.id;
+  const { type, amount, description, status, adjust_balance } = req.body;
+  const amt = parseFloat(amount);
+  const txnStatus = status || 'completed';
+  const txnDesc = description || '';
+  const doAdjust = adjust_balance === 'yes';
+
+  db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+    if (!user) return res.redirect('/admin/users');
+
+    // Insert the transaction
+    db.run(`INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, ?, ?, ?, ?)`,
+      [userId, type, amt, txnDesc, txnStatus], function() {
+
+      // Adjust user balance based on transaction type
+      if (doAdjust) {
+        if (type === 'deposit') {
+          db.run(`UPDATE users SET balance = balance + ?, total_deposited = total_deposited + ? WHERE id = ?`, [amt, amt, userId]);
+        } else if (type === 'withdrawal') {
+          db.run(`UPDATE users SET balance = balance - ? WHERE id = ?`, [amt, userId]);
+        } else if (type === 'interest' || type === 'bonus') {
+          db.run(`UPDATE users SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?`, [amt, amt, userId]);
+        }
+      }
+
+      // Also create matching deposit/withdrawal record for realism
+      if (type === 'deposit' && doAdjust) {
+        db.run(`INSERT INTO deposits (user_id, currency, amount, status, tx_hash) VALUES (?, 'USDT', ?, 'completed', ?)`,
+          [userId, amt, 'TXN' + Date.now().toString(36).toUpperCase()]);
+      } else if (type === 'withdrawal' && doAdjust) {
+        db.run(`INSERT INTO withdrawals (user_id, amount, currency, wallet_address, status) VALUES (?, ?, 'USDT', ?, 'completed')`,
+          [userId, amt, user.email]);
+      }
+
+      // Log the admin action
+      logActivity(userId, 'admin_transaction', `Admin generated ${type} of $${amt} (${txnStatus})${txnDesc ? ': ' + txnDesc : ''}`, req.ip);
+      res.redirect('/admin/users/' + userId + '?generated=1');
+    });
+  });
+});
+
+// Admin - Generate Transactions page (pick any user, batch generate)
+app.get('/admin/generate-transactions', requireAdmin, (req, res) => {
+  db.all(`SELECT id, full_name, email, country, balance FROM users ORDER BY created_at DESC`, (err, users) => {
+    db.all(`SELECT * FROM plans WHERE active = 1`, (err, plans) => {
+      res.render('admin/generate-transactions', { 
+        users: users || [], plans: plans || [], active: 'generate', adminName: req.session.adminName,
+        req_query_success: req.query.success, req_query_user: req.query.user,
+        title: 'Generate Transactions - NovaVest Admin'
+      });
+    });
+  });
+});
+
+// Admin - batch generate realistic transaction history for a user
+app.post('/admin/generate-transactions/batch', requireAdmin, (req, res) => {
+  const { user_id, num_deposits, num_withdrawals, num_interest, min_amount, max_amount, adjust_balance, start_date } = req.body;
+  const userId = parseInt(user_id);
+  const numDep = parseInt(num_deposits) || 0;
+  const numWd = parseInt(num_withdrawals) || 0;
+  const numInt = parseInt(num_interest) || 0;
+  const minAmt = parseFloat(min_amount) || 100;
+  const maxAmt = parseFloat(max_amount) || 5000;
+  const doAdjust = adjust_balance === 'yes';
+  const startDate = start_date || '2024-01-01';
+
+  db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+    if (!user) return res.redirect('/admin/generate-transactions');
+
+    const currencies = ['Bitcoin', 'USDT', 'Ethereum', 'Litecoin'];
+    const depositDescs = ['Crypto deposit via USDT (TRC-20)', 'Crypto deposit via Bitcoin', 'Crypto deposit via Ethereum', 'Deposit confirmed', 'Wallet deposit - USDT'];
+    const withdrawalDescs = ['Withdrawal to external wallet', 'Withdrawal processed - USDT', 'Withdrawal to Bitcoin wallet', 'Withdrawal completed'];
+    const interestDescs = ['Investment ROI payout - Starter Plan', 'Investment ROI payout - Professional Plan', 'Investment ROI payout - Elite Plan', 'Investment ROI payout - Quick Return Plan', 'Daily interest payout', 'Plan maturity payout'];
+
+    function randomAmount() {
+      return Math.round((minAmt + Math.random() * (maxAmt - minAmt)) * 100) / 100;
+    }
+    function randomDate() {
+      const start = new Date(startDate).getTime();
+      const end = new Date().getTime();
+      const randomTime = start + Math.random() * (end - start);
+      return new Date(randomTime).toISOString().replace('T', ' ').substring(0, 19);
+    }
+
+    let totalDeposited = 0;
+    let totalWithdrawn = 0;
+    let totalInterest = 0;
+
+    // Generate deposits
+    for (let i = 0; i < numDep; i++) {
+      const amt = randomAmount();
+      const desc = depositDescs[Math.floor(Math.random() * depositDescs.length)];
+      const curr = currencies[Math.floor(Math.random() * currencies.length)];
+      const dateStr = randomDate();
+      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, created_at) VALUES (?, 'deposit', ?, ?, 'completed', ?)`,
+        [userId, amt, desc, dateStr]);
+      if (doAdjust) {
+        db.run(`INSERT INTO deposits (user_id, currency, amount, status, tx_hash, created_at) VALUES (?, ?, ?, 'completed', ?, ?)`,
+          [userId, curr, amt, 'TXN' + Math.random().toString(36).substring(2, 12).toUpperCase(), dateStr]);
+        totalDeposited += amt;
+      }
+    }
+
+    // Generate withdrawals
+    for (let i = 0; i < numWd; i++) {
+      const amt = randomAmount();
+      const desc = withdrawalDescs[Math.floor(Math.random() * withdrawalDescs.length)];
+      const curr = currencies[Math.floor(Math.random() * currencies.length)];
+      const dateStr = randomDate();
+      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, created_at) VALUES (?, 'withdrawal', ?, ?, 'completed', ?)`,
+        [userId, amt, desc, dateStr]);
+      if (doAdjust) {
+        db.run(`INSERT INTO withdrawals (user_id, amount, currency, wallet_address, status, created_at) VALUES (?, ?, ?, ?, 'completed', ?)`,
+          [userId, amt, curr, user.email, dateStr]);
+        totalWithdrawn += amt;
+      }
+    }
+
+    // Generate interest/ROI
+    for (let i = 0; i < numInt; i++) {
+      const amt = randomAmount();
+      const desc = interestDescs[Math.floor(Math.random() * interestDescs.length)];
+      const dateStr = randomDate();
+      db.run(`INSERT INTO transactions (user_id, type, amount, description, status, created_at) VALUES (?, 'interest', ?, ?, 'completed', ?)`,
+        [userId, amt, desc, dateStr]);
+      if (doAdjust) {
+        totalInterest += amt;
+      }
+    }
+
+    // Adjust balance: deposits + interest - withdrawals
+    if (doAdjust) {
+      const netChange = totalDeposited + totalInterest - totalWithdrawn;
+      db.run(`UPDATE users SET balance = balance + ?, total_deposited = total_deposited + ?, total_earned = total_earned + ? WHERE id = ?`,
+        [netChange, totalDeposited, totalInterest, userId]);
+    }
+
+    logActivity(userId, 'admin_batch_generate', `Admin generated ${numDep} deposits, ${numWd} withdrawals, ${numInt} interest transactions`, req.ip);
+    res.redirect('/admin/generate-transactions?success=1&user=' + userId);
   });
 });
 

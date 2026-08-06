@@ -148,6 +148,52 @@
         </table>
       <% } %>
     </div>
+
+    <!-- Generate Single Transaction -->
+    <div class="dash-panel" style="margin-top:24px; border:1px solid rgba(212,175,55,0.3);">
+      <div class="dash-panel-title" style="color:var(--gold);">⚡ Generate Transaction for This User</div>
+      <% if (req_query_generated) { %>
+        <div style="background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); color:var(--green); padding:12px 16px; border-radius:8px; margin-bottom:16px; font-weight:600;">✅ Transaction generated successfully! It now appears in the user's transaction history.</div>
+      <% } %>
+      <p style="color:var(--gray); font-size:14px; margin-bottom:16px;">Add a deposit, withdrawal, or interest transaction to this user's account. The transaction will appear in their history and optionally adjust their balance.</p>
+      <form action="/admin/users/<%= user.id %>/generate-transaction" method="POST">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Transaction Type <span class="req">*</span></label>
+            <select name="type" class="form-control" required>
+              <option value="deposit">💰 Deposit</option>
+              <option value="withdrawal">🏦 Withdrawal</option>
+              <option value="interest">📈 Interest / ROI Payout</option>
+              <option value="bonus">🎁 Bonus</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Amount ($) <span class="req">*</span></label>
+            <input type="number" name="amount" class="form-control" placeholder="e.g. 500.00" step="0.01" min="0.01" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Description (optional)</label>
+            <input type="text" name="description" class="form-control" placeholder="e.g. Crypto deposit via USDT (TRC-20)">
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select name="status" class="form-control">
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" name="adjust_balance" value="yes" checked style="width:18px; height:18px;">
+            <span>Adjust user balance (add/subtract from their account balance)</span>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block">⚡ Generate Transaction</button>
+      </form>
+    </div>
   </main>
 </div>
 </body>

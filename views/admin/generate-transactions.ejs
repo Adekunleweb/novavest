@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1>⚡ Generate Transactions</h1>
+        <div class="sub" style="color:var(--gray);">Create realistic transaction history for any user</div>
+      </div>
+    </div>
+
+    <% if (req_query_success) { %>
+      <div style="background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); color:var(--green); padding:16px 20px; border-radius:10px; margin-bottom:24px; font-weight:600;">
+        ✅ Batch transactions generated successfully! <a href="/admin/users/<%= req_query_user %>" style="color:var(--green); text-decoration:underline;">View user account →</a>
+      </div>
+    <% } %>
+
+    <!-- Single Transaction Generator -->
+    <div class="dash-panel" style="margin-bottom:24px; border:1px solid rgba(212,175,55,0.3);">
+      <div class="dash-panel-title" style="color:var(--gold);">⚡ Quick: Add Single Transaction</div>
+      <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">Add one transaction (deposit, withdrawal, or interest) to any user's account. This will show in their transaction history and adjust their balance.</p>
+      <form action="/admin/users/0/generate-transaction" method="POST" id="singleForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Select User <span class="req">*</span></label>
+            <select name="user_id_single" id="singleUserSelect" class="form-control" required onchange="updateSingleFormAction()">
+              <option value="">Choose a user...</option>
+              <% users.forEach(function(u) { %>
+                <option value="<%= u.id %>"><%= u.full_name %> — <%= u.email %> (Balance: $<%= (u.balance||0).toLocaleString() %>)</option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Transaction Type <span class="req">*</span></label>
+            <select name="type" class="form-control" required>
+              <option value="deposit">💰 Deposit</option>
+              <option value="withdrawal">🏦 Withdrawal</option>
+              <option value="interest">📈 Interest / ROI Payout</option>
+              <option value="bonus">🎁 Bonus</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount ($) <span class="req">*</span></label>
+            <input type="number" name="amount" class="form-control" placeholder="e.g. 500.00" step="0.01" min="0.01" required>
+          </div>
+          <div class="form-group">
+            <label>Description (optional)</label>
+            <input type="text" name="description" class="form-control" placeholder="e.g. Crypto deposit via USDT (TRC-20)">
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" name="adjust_balance" value="yes" checked style="width:18px; height:18px;">
+            <span>Adjust user balance automatically</span>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block">⚡ Generate Transaction</button>
+      </form>
+    </div>
+
+    <!-- Batch Transaction Generator -->
+    <div class="dash-panel" style="border:1px solid rgba(100,149,237,0.3);">
+      <div class="dash-panel-title" style="color:#6495ED;">📊 Batch: Generate Full Transaction History</div>
+      <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">Generate multiple realistic transactions at once for any user. Perfect for creating a full history with deposits, withdrawals, and interest payouts spread across random dates.</p>
+      <form action="/admin/generate-transactions/batch" method="POST">
+        <div class="form-group" style="margin-bottom:20px;">
+          <label>Select User <span class="req">*</span></label>
+          <select name="user_id" class="form-control" required>
+            <option value="">Choose a user...</option>
+            <% users.forEach(function(u) { %>
+              <option value="<%= u.id %>"><%= u.full_name %> — <%= u.email %> (Balance: $<%= (u.balance||0).toLocaleString() %>)</option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:20px;">
+          <div style="font-weight:700; margin-bottom:16px; color:var(--white);">📊 Number of Transactions to Generate</div>
+          <div class="form-row" style="grid-template-columns:1fr 1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label>💰 Deposits</label>
+              <input type="number" name="num_deposits" class="form-control" value="5" min="0" max="50">
+            </div>
+            <div class="form-group">
+              <label>🏦 Withdrawals</label>
+              <input type="number" name="num_withdrawals" class="form-control" value="2" min="0" max="50">
+            </div>
+            <div class="form-group">
+              <label>📈 Interest Payouts</label>
+              <input type="number" name="num_interest" class="form-control" value="8" min="0" max="50">
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:20px;">
+          <div style="font-weight:700; margin-bottom:16px; color:var(--white);">💵 Amount Range (per transaction)</div>
+          <div class="form-row" style="grid-template-columns:1fr 1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label>Minimum Amount ($)</label>
+              <input type="number" name="min_amount" class="form-control" value="100" step="0.01" min="1">
+            </div>
+            <div class="form-group">
+              <label>Maximum Amount ($)</label>
+              <input type="number" name="max_amount" class="form-control" value="5000" step="0.01" min="1">
+            </div>
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" name="start_date" class="form-control" value="2024-06-01">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" name="adjust_balance" value="yes" checked style="width:18px; height:18px;">
+            <span>Adjust user balance & create matching deposit/withdrawal records (recommended)</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-navy btn-block" style="background:#6495ED;">📊 Generate Full Transaction History</button>
+      </form>
+    </div>
+
+    <!-- User Quick Links -->
+    <div class="dash-panel" style="margin-top:24px;">
+      <div class="dash-panel-title">All Users — Quick Generate</div>
+      <p style="color:var(--gray); font-size:13px; margin-bottom:16px;">Click any user to go to their detail page where you can generate individual transactions.</p>
+      <table class="table">
+        <thead><tr><th>Name</th><th>Email</th><th>Country</th><th>Balance</th><th>Action</th></tr></thead>
+        <tbody>
+          <% users.forEach(function(u) { %>
+            <tr>
+              <td style="font-weight:600;"><%= u.full_name %></td>
+              <td style="font-size:13px;"><%= u.email %></td>
+              <td style="font-size:13px;"><%= u.country || '—' %></td>
+              <td>$<%= (u.balance||0).toLocaleString(undefined,{minimumFractionDigits:2}) %></td>
+              <td><a href="/admin/users/<%= u.id %>" class="btn btn-gold btn-sm">⚡ Generate</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% if (users.length === 0) { %>
+        <p style="color:var(--gray); text-align:center; padding:40px;">No users registered yet.</p>
+      <% } %>
+    </div>
+  </main>
+</div>
+
+<script>
+function updateSingleFormAction() {
+  const select = document.getElementById('singleUserSelect');
+  const form = document.getElementById('singleForm');
+  const userId = select.value;
+  if (userId) {
+    form.action = '/admin/users/' + userId + '/generate-transaction';
+  }
+}
+</script>
+</body>
+</html>
