@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
@@ -139,21 +140,21 @@ app.post('/signup', (req, res) => {
 // Login
 app.get('/login', (req, res) => {
   if (req.session.userId) return res.redirect('/dashboard');
-  res.render('login', { error: null, title: 'Login - NovaVest' });
+  res.render('login', { error: null, success_msg: null, title: 'Login - NovaVest' });
 });
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, user) => {
     if (!user) {
-      return res.render('login', { error: 'Invalid email or password', title: 'Login - NovaVest' });
+      return res.render('login', { error: 'Invalid email or password', success_msg: null, title: 'Login - NovaVest' });
     }
     if (user.status === 'blocked') {
-      return res.render('login', { error: 'Your account has been blocked. Contact support.', title: 'Login - NovaVest' });
+      return res.render('login', { error: 'Your account has been blocked. Contact support.', success_msg: null, title: 'Login - NovaVest' });
     }
     bcrypt.compare(password, user.password, (err, match) => {
       if (!match) {
-        return res.render('login', { error: 'Invalid email or password', title: 'Login - NovaVest' });
+        return res.render('login', { error: 'Invalid email or password', success_msg: null, title: 'Login - NovaVest' });
       }
       req.session.userId = user.id;
       req.session.userName = user.full_name;
@@ -171,6 +172,151 @@ app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/');
 });
+
+
+// Forgot Password - GET (show form)
+app.get('/forgot-password', (req, res) => {
+  if (req.session.userId) return res.redirect('/dashboard');
+  res.render('forgot-password', { error: null, success: null, title: 'Forgot Password - NovaVest' });
+});
+
+// Forgot Password - POST (send reset email)
+app.post('/forgot-password', (req, res) => {
+  const { email } = req.body;
+  db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, user) => {
+    if (!user) {
+      // For security, show the same success message even if email doesn't exist
+      return res.render('forgot-password', { 
+        error: null, 
+        success: 'If an account with that email exists, a password reset link has been sent. Please check your inbox and spam folder.', 
+        title: 'Forgot Password - NovaVest' 
+      });
+    }
+    // Generate a secure random token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour expiry
+
+    db.run(`UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?`, [token, expires, user.id], (err) => {
+      const baseUrl = process.env.FRONTEND_URL || 'http://' + req.headers.host;
+      const resetUrl = baseUrl + '/reset-password?token=' + token;
+      
+      // Send the reset email
+      mailer.notifyPasswordReset(user, resetUrl);
+      
+      logActivity(user.id, 'password_reset_request', `Password reset requested for ${email}`, req.ip);
+      
+      res.render('forgot-password', { 
+        error: null, 
+        success: 'If an account with that email exists, a password reset link has been sent. Please check your inbox and spam folder.', 
+        title: 'Forgot Password - NovaVest' 
+      });
+    });
+  });
+});
+
+// Reset Password - GET (show form with token)
+app.get('/reset-password', (req, res) => {
+  const { token } = req.query;
+  if (!token) {
+    return res.render('reset-password', { 
+      error: 'Invalid or missing reset token. Please request a new password reset link.', 
+      token: null, 
+      title: 'Reset Password - NovaVest' 
+    });
+  }
+  db.get(`SELECT * FROM users WHERE reset_token = ?`, [token], (err, user) => {
+    if (!user) {
+      return res.render('reset-password', { 
+        error: 'This reset link is invalid or has already been used. Please request a new password reset link.', 
+        token: null, 
+        title: 'Reset Password - NovaVest' 
+      });
+    }
+    // Check if token has expired
+    const expires = new Date(user.reset_expires);
+    if (expires < new Date()) {
+      return res.render('reset-password', { 
+        error: 'This reset link has expired. Please request a new password reset link.', 
+        token: null, 
+        title: 'Reset Password - NovaVest' 
+      });
+    }
+    res.render('reset-password', { 
+      error: null, 
+      token: token, 
+      title: 'Reset Password - NovaVest' 
+    });
+  });
+});
+
+// Reset Password - POST (update password)
+app.post('/reset-password', (req, res) => {
+  const { password, confirm_password } = req.body;
+  const token = req.query.token;
+
+  if (!token) {
+    return res.render('reset-password', { 
+      error: 'Invalid or missing reset token. Please request a new password reset link.', 
+      token: null, 
+      title: 'Reset Password - NovaVest' 
+    });
+  }
+  if (password !== confirm_password) {
+    return res.render('reset-password', { 
+      error: 'Passwords do not match. Please try again.', 
+      token: token, 
+      title: 'Reset Password - NovaVest' 
+    });
+  }
+  if (password.length < 6) {
+    return res.render('reset-password', { 
+      error: 'Password must be at least 6 characters long.', 
+      token: token, 
+      title: 'Reset Password - NovaVest' 
+    });
+  }
+
+  db.get(`SELECT * FROM users WHERE reset_token = ?`, [token], (err, user) => {
+    if (!user) {
+      return res.render('reset-password', { 
+        error: 'This reset link is invalid or has already been used. Please request a new password reset link.', 
+        token: null, 
+        title: 'Reset Password - NovaVest' 
+      });
+    }
+    const expires = new Date(user.reset_expires);
+    if (expires < new Date()) {
+      return res.render('reset-password', { 
+        error: 'This reset link has expired. Please request a new password reset link.', 
+        token: null, 
+        title: 'Reset Password - NovaVest' 
+      });
+    }
+
+    bcrypt.hash(password, 10, (err, hash) => {
+      db.run(`UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?`, [hash, user.id], (err) => {
+        if (err) {
+          return res.render('reset-password', { 
+            error: 'An error occurred. Please try again.', 
+            token: token, 
+            title: 'Reset Password - NovaVest' 
+          });
+        }
+        // Send confirmation email
+        mailer.notifyPasswordChanged(user);
+        logActivity(user.id, 'password_change', `Password changed via reset for ${user.email}`, req.ip);
+        
+        // Redirect to login with success message
+        res.render('login', { 
+          error: null, 
+          success_msg: 'Your password has been reset successfully. Please log in with your new password.',
+          title: 'Login - NovaVest' 
+        });
+      });
+    });
+  });
+});
+
 
 // Admin logout
 app.get('/admin/logout', (req, res) => {

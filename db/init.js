@@ -157,6 +157,8 @@ db.serialize(() => {
   db.run(`ALTER TABLE users ADD COLUMN referral_code TEXT`, () => {});
   db.run(`ALTER TABLE users ADD COLUMN referred_by INTEGER`, () => {});
   db.run(`ALTER TABLE transactions ADD COLUMN tx_hash TEXT`, () => {});
+  db.run(`ALTER TABLE users ADD COLUMN reset_token TEXT`, () => {});
+  db.run(`ALTER TABLE users ADD COLUMN reset_expires TEXT`, () => {});
 
   // Seed investment plans
   db.run(`INSERT OR IGNORE INTO plans (id, name, min_deposit, max_deposit, roi_percent, duration_days, description, badge) VALUES

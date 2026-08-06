@@ -285,5 +285,55 @@ module.exports = {
   notifyWithdrawalSubmitted,
   notifyWithdrawalApproved,
   notifyWithdrawalRejected,
-  notifyChatReply
+  notifyChatReply,
+  notifyPasswordReset,
+  notifyPasswordChanged
 };
+
+// Password reset email
+async function notifyPasswordReset(user, resetUrl) {
+  const content = `
+    <h2 style="margin:0 0 20px;color:#e6f1ff;font-size:22px;">Password Reset Request 🔐</h2>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      Hello ${user.full_name}, we received a request to reset your NovaVest account password.
+    </p>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      Click the button below to set a new password. This link will expire in 1 hour for security reasons.
+    </p>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${resetUrl}" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Reset My Password</a>
+    </div>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      If the button doesn't work, copy and paste this link into your browser:
+    </p>
+    <p style="color:#d4af37;font-size:13px;word-break:break-all;background:#0a1628;padding:12px;border-radius:8px;">
+      ${resetUrl}
+    </p>
+    <div style="background:#0a1628;border-radius:10px;padding:16px;margin:25px 0;border-left:3px solid #f0ad4e;">
+      <p style="margin:0;color:#f0ad4e;font-size:14px;">
+        ⚠️ If you did not request a password reset, please ignore this email. Your password will remain unchanged and your account is safe.
+      </p>
+    </div>`;
+  return sendEmail(user.email, 'Password Reset Request — NovaVest 🔐', content);
+}
+
+// Password reset confirmation email
+async function notifyPasswordChanged(user) {
+  const content = `
+    <h2 style="margin:0 0 20px;color:#e6f1ff;font-size:22px;">Password Changed Successfully ✅</h2>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      Hello ${user.full_name}, your NovaVest account password has been successfully changed.
+    </p>
+    <div style="background:#0a1628;border-radius:10px;padding:16px;margin:25px 0;border-left:3px solid #28a745;">
+      <p style="margin:0;color:#28a745;font-size:14px;">
+        ✅ Your account security has been updated. You can now log in with your new password.
+      </p>
+    </div>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      If you did not make this change, please contact our support team immediately via the live chat in your dashboard.
+    </p>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${frontendUrl}/login" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Login to Your Account</a>
+    </div>`;
+  return sendEmail(user.email, 'Password Changed — NovaVest ✅', content);
+}
