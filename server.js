@@ -1045,6 +1045,11 @@ io.on('connection', (socket) => {
   });
 });
 
+// ============ HEALTHCHECK (for Railway / uptime monitors) ============
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'novavest', time: new Date().toISOString() });
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`NovaVest server running on port ${PORT}`);
