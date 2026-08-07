@@ -4,15 +4,28 @@ const path = require('path');
 const fs = require('fs');
 
 // DB path — can be overridden with DB_PATH env var for persistent volumes
+// On Railway, set DB_PATH to a volume mount like /data/novavest.db for persistence.
+// Default: write inside the app's own directory (writable on Railway's container).
 const dbPath = process.env.DB_PATH || path.join(__dirname, 'novavest.db');
 
 // Ensure directory exists for the DB file
 const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+try {
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+} catch (err) {
+  console.error(`[DB] Could not create directory ${dbDir}: ${err.message}`);
+  console.error('[DB] Falling back to in-memory or current directory.');
 }
 
-const db = new sqlite3.Database(dbPath);
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error(`[DB] Failed to open SQLite database at ${dbPath}:`, err.message);
+  } else {
+    console.log(`[DB] SQLite database ready at ${dbPath}`);
+  }
+});
 
 db.serialize(() => {
   // Users table - all signup details visible in admin
