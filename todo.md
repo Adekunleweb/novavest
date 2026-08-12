@@ -54,6 +54,26 @@
 - [x] Identify the critical distinction: hosting prohibitions ≠ domain registration prohibitions
 - [x] Deliver comprehensive answer to user with warnings and recommendations
 
+## Phase 10: Domain Purchased & Verified — Railway Custom Domain Setup
+
+- [x] User uploaded screenshots showing successful domain purchase
+- [x] Verified domain name: apexcrestvest.com (confirmed correct spelling from screenshots)
+- [x] Verified status: ACTIVE (green badge)
+- [x] Verified registration: Due Date Aug 11, 2027 (1 year registered)
+- [x] Verified price: ₦24,000.00
+- [x] Verified nameservers: Default (nsc.go54.com · nsd.go54.com) — Whogohost/GO54 default
+- [x] Verified domain lock: Locked (transfers blocked — good for security)
+- [x] Verified auto-renew: Enabled
+- [x] ID Protection: NOT purchased (offered as upsell "Get ID Protection" — user can add later)
+- [ ] Guide user through Railway custom domain setup (CNAME + TXT records)
+- [ ] Guide user through adding DNS records in Whogohost DNS manager
+- [ ] Verify domain verification + SSL provisioning on Railway
+
+### Screenshot Analysis (Phase 10)
+- [x] IMG_3597: Domain overview — apexcrestvest.com, Active, ₦24,000, expires Aug 11 2027
+- [x] IMG_3598: Management details — ID Protection not active (upsell shown), Healthy status, Auto-renew ON, Nameservers default (nsc.go54.com/nsd.go54.com), Domain Locked
+- [x] IMG_3599: Quick Actions dashboard — Manage DNS Records, Manage Nameservers, Update Contact tabs available
+
 ## Phase 9: Payment Not Reflecting — Troubleshooting
 
 - [x] Research Whogohost payment confirmation delays (card vs bank transfer vs USSD)
