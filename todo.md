@@ -1,8 +1,8 @@
-# Investment Platform — Full Rebrand TODO (NovaVest → ApexCrestVest)
+# ApexCrestVest — Full Rebrand TODO (NovaVest → ApexCrestVest)
 
 ## Phase 1: Survey & Planning
-- [x] Clone novavest repo from GitHub
-- [x] Survey current branding (NovaVest) across all files
+- [x] Clone original repo from GitHub (github.com/Adekunleweb/novavest)
+- [x] Survey current branding across all files (formerly NovaVest)
 - [x] Identify color scheme (gold #d4af37 + navy) and all branding contexts
 - [x] Map all 21 files with 138 occurrences
 
@@ -36,7 +36,8 @@
 - [x] Rebrand todo.md
 
 ## Phase 4: Verify & Push
-- [x] Verify zero remaining NovaVest references (0 found)
+- [x] Verify zero remaining NovaVest references (0 found in code)
+- [x] Clean remaining NovaVest references in this todo.md (domain update pass)
 - [x] Test all JS files pass syntax check
 - [x] Test server.js starts cleanly ("ApexCrestVest server running on port 3000")
 - [x] Commit rebrand (5ba62c9, 22 files changed)

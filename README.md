@@ -52,8 +52,8 @@ Create a `.env` file (see `.env.example`):
 
 ```env
 RESEND_API_KEY=re_your_api_key_here
-RESEND_FROM_EMAIL=ApexCrestVest <noreply@yourdomain.com>
-FRONTEND_URL=https://your-app-url.com
+RESEND_FROM_EMAIL=ApexCrestVest <noreply@apexcrestvest.com>
+FRONTEND_URL=https://apexcrestvest.com
 PORT=3000
 ```
 

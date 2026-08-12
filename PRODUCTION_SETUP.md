@@ -85,8 +85,8 @@ They are currently **silently skipped** because no API key is set.
 Go to Railway → **Variables** tab and add:
 ```
 RESEND_API_KEY=re_your_api_key_here
-RESEND_FROM_EMAIL=ApexCrestVest <noreply@yourdomain.com>
-FRONTEND_URL=https://yourdomain.com
+RESEND_FROM_EMAIL=ApexCrestVest <noreply@apexcrestvest.com>
+FRONTEND_URL=https://apexcrestvest.com
 ```
 
 ### Step 5: Test
@@ -119,7 +119,7 @@ Railway provides **automatic SSL/HTTPS certificates** — no manual setup needed
 ### Step 4: Update FRONTEND_URL
 Make sure `FRONTEND_URL` env var is set to your custom domain:
 ```
-FRONTEND_URL=https://yourdomain.com
+FRONTEND_URL=https://apexcrestvest.com
 ```
 This ensures email links point to the correct URL.
 
@@ -169,8 +169,8 @@ Set ALL of these on Railway → **Variables** tab:
 | `SESSION_SECRET` | ✅ YES | (random 64-char string) | Session encryption |
 | `ADMIN_PASSWORD` | ✅ YES | (your secure password) | Admin login password |
 | `RESEND_API_KEY` | ✅ YES | `re_abc123...` | Email notifications |
-| `RESEND_FROM_EMAIL` | ✅ YES | `ApexCrestVest <noreply@yourdomain.com>` | Sender email address |
-| `FRONTEND_URL` | ✅ YES | `https://yourdomain.com` | Email link URLs |
+| `RESEND_FROM_EMAIL` | ✅ YES | `ApexCrestVest <noreply@apexcrestvest.com>` | Sender email address |
+| `FRONTEND_URL` | ✅ YES | `https://apexcrestvest.com` | Email link URLs |
 | `NODE_ENV` | Optional | `production` | Express production mode |
 
 ---
