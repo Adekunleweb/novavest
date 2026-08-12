@@ -54,6 +54,25 @@
 - [x] Identify the critical distinction: hosting prohibitions ≠ domain registration prohibitions
 - [x] Deliver comprehensive answer to user with warnings and recommendations
 
+## Phase 8: Domain Privacy Protection Cost Concern
+
+- [x] Research ICANN post-GDPR WHOIS redaction policy (registrars MUST redact personal data by default — free, not paid)
+- [x] Check what non-privacy-protected .com WHOIS actually shows (verified via smartwebng.com: name, address, phone, email visible)
+- [x] Check Whogohost/GO54 ID protection pricing (offered as separate add-on; base .com = ₦24,000 est.)
+- [x] Research practical workarounds for user who can't afford privacy protection
+- [x] Deliver clear, actionable answer to user
+
+### Research Findings (Phase 8)
+- [x] ICANN Temp Spec / Registration Data Policy (May 2018+): registrars required to redact personal data for natural persons by default — BUT enforcement varies; many registrars still show data if registrant selects "business" or doesn't enable privacy
+- [x] Verified via WHOIS on smartwebng.com (no privacy): Registrant Name, Street, City, State, Postal Code, Country, Phone, Email ALL visible publicly
+- [x] Verified via WHOIS on whogohost.com (no privacy): Full name "Wycliffe Onduu", address, phone, email ALL visible
+- [x] Verified via WHOIS on go54.com (privacy ON): everything redacted
+- [x] GO54 blog confirms: WHOIS privacy is available as add-on; base domain includes free WHOIS lookup + DNS + forwarding but NOT necessarily privacy
+- [x] WORKAROUND: Register as "individual/natural person" → ICANN requires free default redaction. Register as "business" → less protection.
+- [x] WORKAROUND: Use a dedicated email address (not personal Gmail), use a business/office address instead of home address
+- [x] WORKAROUND: .com.ng domains under NIRA have different privacy rules — NIRA WHOIS typically shows less personal data
+- [x] BEST WORKAROUND: Buy the domain now without privacy, add ID protection later when funds are available (can be enabled anytime post-purchase)
+
 ## Phase 7: Pre-Purchase Reassurance & Going-Live Guide
 
 - [x] Verify apexcrestvest.com domain availability via whois → CONFIRMED AVAILABLE ("No match for domain APEXCRESTVEST.COM")
