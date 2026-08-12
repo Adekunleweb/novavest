@@ -1,4 +1,4 @@
-# NovaVest — Marketing Write-Ups & Captivating Messages
+# ApexCrestVest — Marketing Write-Ups & Captivating Messages
 
 *Copy and paste these messages to share with your friends, family, WhatsApp groups, Telegram channels, Facebook, Twitter/X, Instagram, and email. Choose the ones that fit your audience best.*
 
@@ -7,19 +7,19 @@
 ## 🔥 SHORT & PUNCHY (For WhatsApp Status, Twitter/X, Instagram Stories)
 
 ### Message 1
-> 🚀 What if I told you $100 could turn into $125 in just 7 days? That's exactly what NovaVest does. I'm already in. Don't sleep on this — join here: [YOUR LINK]
+> 🚀 What if I told you $100 could turn into $125 in just 7 days? That's exactly what ApexCrestVest does. I'm already in. Don't sleep on this — join here: [YOUR LINK]
 
 ### Message 2
-> Stop letting inflation eat your savings. NovaVest gives you 25% ROI in 7 days, 60% in 14 days, or 150% in 30 days. Plus, you get $1,000 FREE just for signing up. Here's my link: [YOUR LINK]
+> Stop letting inflation eat your savings. ApexCrestVest gives you 25% ROI in 7 days, 60% in 14 days, or 150% in 30 days. Plus, you get $1,000 FREE just for signing up. Here's my link: [YOUR LINK]
 
 ### Message 3
-> I found something real. NovaVest is paying investors guaranteed returns and every new member gets $1,000 instantly. You don't even need to deposit to get the bonus. Sign up free: [YOUR LINK]
+> I found something real. ApexCrestVest is paying investors guaranteed returns and every new member gets $1,000 instantly. You don't even need to deposit to get the bonus. Sign up free: [YOUR LINK]
 
 ### Message 4
-> 🎁 $1,000 FREE sign up bonus. $700 for every friend you refer. Guaranteed ROI up to 150%. This is NovaVest. Get in early: [YOUR LINK]
+> 🎁 $1,000 FREE sign up bonus. $700 for every friend you refer. Guaranteed ROI up to 150%. This is ApexCrestVest. Get in early: [YOUR LINK]
 
 ### Message 5
-> The wealthy don't save — they invest. NovaVest makes it simple. Start with $100, earn 25% in a week. Or try the 48-hour plan: $200 → 40% in 2 days. Sign up and claim your $1,000 bonus: [YOUR LINK]
+> The wealthy don't save — they invest. ApexCrestVest makes it simple. Start with $100, earn 25% in a week. Or try the 48-hour plan: $200 → 40% in 2 days. Sign up and claim your $1,000 bonus: [YOUR LINK]
 
 ---
 
@@ -28,7 +28,7 @@
 ### Message 6 — The "Wake Up" Message
 > 🚨 **Stop scrolling. This could change your financial life.**
 
-> I've been using NovaVest and the results are real. Here's why I'm sharing this with you:
+> I've been using ApexCrestVest and the results are real. Here's why I'm sharing this with you:
 
 > ✅ **$1,000 FREE** the moment you create your account — no deposit required
 > ✅ **25% ROI in 7 days** on the Starter plan (just $100 minimum)
@@ -49,7 +49,7 @@
 ### Message 7 — The "Referral Income" Message
 > 💰 **Want to earn money without investing a dime?**
 
-> NovaVest has a referral program that pays you $700 for EVERY person who signs up through your link. Here's how it works:
+> ApexCrestVest has a referral program that pays you $700 for EVERY person who signs up through your link. Here's how it works:
 
 > 1️⃣ Sign up for free (you get $1,000 instantly)
 > 2️⃣ Copy your unique referral link from your dashboard
@@ -65,7 +65,7 @@
 > 👉 **Get started here:** [YOUR LINK]
 
 ### Message 8 — The "Investment Plans" Message
-> 📊 **NovaVest Investment Plans — Pick What Works For You:**
+> 📊 **ApexCrestVest Investment Plans — Pick What Works For You:**
 
 > 🟢 **Quick Return** — Min $200 → 40% ROI in 24-48 hours
 > Turn $200 into $280 in 2 days. Perfect for quick flips.
@@ -98,9 +98,9 @@
 
 > Hi there,
 
-> I wanted to personally invite you to NovaVest — a premium investment platform that's helping over 50,000 investors worldwide grow their wealth with guaranteed returns.
+> I wanted to personally invite you to ApexCrestVest — a premium investment platform that's helping over 50,000 investors worldwide grow their wealth with guaranteed returns.
 
-> **Here's what makes NovaVest different:**
+> **Here's what makes ApexCrestVest different:**
 
 > 🎁 Every new member receives $1,000 FREE as a sign up bonus — instantly credited to your account, no deposit required.
 
@@ -128,7 +128,7 @@
 
 > Hi,
 
-> I reached out a few days ago about NovaVest and wanted to follow up because I genuinely believe this could be a game-changer for you.
+> I reached out a few days ago about ApexCrestVest and wanted to follow up because I genuinely believe this could be a game-changer for you.
 
 > Just to recap:
 > - $1,000 FREE sign up bonus (instant, no deposit needed)
@@ -140,7 +140,7 @@
 
 > 👉 Claim your $1,000 bonus here: [YOUR LINK]
 
-> If you have any questions, NovaVest has 24/7 live chat support — they respond in real-time.
+> If you have any questions, ApexCrestVest has 24/7 live chat support — they respond in real-time.
 
 > Best,
 > [YOUR NAME]
@@ -150,7 +150,7 @@
 ## 📘 FACEBOOK POSTS
 
 ### Message 11
-> 🚀 I don't usually post things like this, but NovaVest has been a game-changer for me.
+> 🚀 I don't usually post things like this, but ApexCrestVest has been a game-changer for me.
 
 > I signed up, got $1,000 FREE instantly (no deposit required), and started investing. The returns are real and withdrawals are fast.
 
@@ -160,12 +160,12 @@
 
 > 👉 Sign up free and claim your $1,000 bonus: [YOUR LINK]
 
-> #Investing #PassiveIncome #NovaVest #WealthBuilding #CryptoInvesting
+> #Investing #PassiveIncome #ApexCrestVest #WealthBuilding #CryptoInvesting
 
 ### Message 12
 > 💡 "The best time to plant a tree was 20 years ago. The second best time is now."
 
-> Same goes for investing. NovaVest makes it easy:
+> Same goes for investing. ApexCrestVest makes it easy:
 > ✅ Start with just $100
 > ✅ Earn 25% in 7 days
 > ✅ Get $1,000 FREE when you sign up
@@ -181,7 +181,7 @@
 
 ### Message 13 — Thread
 > **Tweet 1:**
-> I've been testing NovaVest for a while now and the results are honestly impressive. Let me break down why I think every investor (or aspiring investor) should pay attention 🧵👇
+> I've been testing ApexCrestVest for a while now and the results are honestly impressive. Let me break down why I think every investor (or aspiring investor) should pay attention 🧵👇
 
 > **Tweet 2:**
 > First, every new member gets $1,000 FREE. Instantly. No deposit required. That alone is worth signing up for.
@@ -209,16 +209,16 @@
 ## 🎯 SMS / TEXT MESSAGES (Short)
 
 ### Message 14
-> Hey! Just found NovaVest — they give $1,000 FREE when you sign up and 25% ROI in 7 days. No deposit needed for the bonus. Here's my link: [YOUR LINK]
+> Hey! Just found ApexCrestVest — they give $1,000 FREE when you sign up and 25% ROI in 7 days. No deposit needed for the bonus. Here's my link: [YOUR LINK]
 
 ### Message 15
-> Don't sleep on this: NovaVest is paying $700 for every friend you refer + $1,000 sign up bonus. I'm already in. Join me: [YOUR LINK]
+> Don't sleep on this: ApexCrestVest is paying $700 for every friend you refer + $1,000 sign up bonus. I'm already in. Join me: [YOUR LINK]
 
 ---
 
 ## 📝 HOW TO USE THESE MESSAGES
 
-1. **Replace [YOUR LINK]** with your personal NovaVest referral link (find it in your dashboard → Referral page)
+1. **Replace [YOUR LINK]** with your personal ApexCrestVest referral link (find it in your dashboard → Referral page)
 2. **Replace [YOUR NAME]** with your actual name for email messages
 3. **Share widely** — WhatsApp groups, Telegram channels, Facebook, Twitter/X, Instagram, email, SMS
 4. **Be consistent** — share 2-3 times per week, not all at once
@@ -237,4 +237,4 @@
 
 ---
 
-*Remember: Your referral link is in your NovaVest dashboard under the "Referral" tab. Every person who signs up through your link earns you $700 automatically — no approval needed, no waiting period.*
+*Remember: Your referral link is in your ApexCrestVest dashboard under the "Referral" tab. Every person who signs up through your link earns you $700 automatically — no approval needed, no waiting period.*

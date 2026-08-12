@@ -1,7 +1,7 @@
 {
-  "name": "novavest",
+  "name": "apexcrestvest",
   "version": "1.0.0",
-  "description": "NovaVest - Premium Investment Platform with worldwide signup, admin dashboard, crypto wallets, real-time chat, and email notifications",
+  "description": "ApexCrestVest - Premium Investment Platform with worldwide signup, admin dashboard, crypto wallets, real-time chat, and email notifications",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,8 +9,14 @@
     "init-db": "node db/init.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["investment", "crypto", "platform", "admin-dashboard", "socket.io"],
-  "author": "NovaVest",
+  "keywords": [
+    "investment",
+    "crypto",
+    "platform",
+    "admin-dashboard",
+    "socket.io"
+  ],
+  "author": "ApexCrestVest",
   "license": "UNLICENSED",
   "type": "commonjs",
   "engines": {
@@ -30,5 +36,9 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true,
+    "sqlite3@5.1.7": true
   }
 }

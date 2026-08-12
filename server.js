@@ -19,7 +19,7 @@ const io = new Server(server);
 
 // Session config
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'novavest-secret-key-2024-investment-platform',
+  secret: process.env.SESSION_SECRET || 'apexcrestvest-secret-key-2024-investment-platform',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
@@ -51,30 +51,30 @@ function logActivity(userId, action, details, ip) {
 // Home / Landing
 app.get('/', (req, res) => {
   db.all(`SELECT * FROM plans WHERE active = 1 ORDER BY min_deposit ASC`, (err, plans) => {
-    res.render('index', { plans: plans || [], title: 'NovaVest - Premium Investment Platform' });
+    res.render('index', { plans: plans || [], title: 'ApexCrestVest - Premium Investment Platform' });
   });
 });
 
 // About
 app.get('/about', (req, res) => {
-  res.render('about', { title: 'About Us - NovaVest' });
+  res.render('about', { title: 'About Us - ApexCrestVest' });
 });
 
 // Plans page
 app.get('/plans', (req, res) => {
   db.all(`SELECT * FROM plans WHERE active = 1 ORDER BY min_deposit ASC`, (err, plans) => {
-    res.render('plans', { plans: plans || [], title: 'Investment Plans - NovaVest' });
+    res.render('plans', { plans: plans || [], title: 'Investment Plans - ApexCrestVest' });
   });
 });
 
 // FAQ
 app.get('/faq', (req, res) => {
-  res.render('faq', { title: 'FAQ - NovaVest' });
+  res.render('faq', { title: 'FAQ - ApexCrestVest' });
 });
 
 // Contact
 app.get('/contact', (req, res) => {
-  res.render('contact', { title: 'Contact - NovaVest' });
+  res.render('contact', { title: 'Contact - ApexCrestVest' });
 });
 
 // ============ AUTH ROUTES ============
@@ -83,14 +83,14 @@ app.get('/contact', (req, res) => {
 app.get('/signup', (req, res) => {
   if (req.session.userId) return res.redirect('/dashboard');
   const ref = req.query.ref || '';
-  res.render('signup', { countries, error: null, title: 'Sign Up - NovaVest', ref });
+  res.render('signup', { countries, error: null, title: 'Sign Up - ApexCrestVest', ref });
 });
 
 app.post('/signup', (req, res) => {
   const { full_name, email, phone, password, confirm_password, country, address, national_id, ref } = req.body;
   
   if (password !== confirm_password) {
-    return res.render('signup', { countries, error: 'Passwords do not match', title: 'Sign Up - NovaVest', ref: ref || '' });
+    return res.render('signup', { countries, error: 'Passwords do not match', title: 'Sign Up - ApexCrestVest', ref: ref || '' });
   }
   
   const countryData = countries.find(c => c.code === country);
@@ -98,7 +98,7 @@ app.post('/signup', (req, res) => {
 
   db.get(`SELECT id FROM users WHERE email = ?`, [email], (err, existing) => {
     if (existing) {
-      return res.render('signup', { countries, error: 'Email already registered. Please login.', title: 'Sign Up - NovaVest', ref: ref || '' });
+      return res.render('signup', { countries, error: 'Email already registered. Please login.', title: 'Sign Up - ApexCrestVest', ref: ref || '' });
     }
     bcrypt.hash(password, 10, (err, hash) => {
       // Generate a unique referral code for this new user
@@ -108,7 +108,7 @@ app.post('/signup', (req, res) => {
         [full_name, email, phone, hash, countryData ? countryData.name : country, address, national_id, idType, referralCode, ref || null],
         function(err) {
           if (err) {
-            return res.render('signup', { countries, error: 'Error creating account. Try again.', title: 'Sign Up - NovaVest', ref: ref || '' });
+            return res.render('signup', { countries, error: 'Error creating account. Try again.', title: 'Sign Up - ApexCrestVest', ref: ref || '' });
           }
           const userId = this.lastID;
           req.session.userId = userId;
@@ -140,21 +140,21 @@ app.post('/signup', (req, res) => {
 // Login
 app.get('/login', (req, res) => {
   if (req.session.userId) return res.redirect('/dashboard');
-  res.render('login', { error: null, success_msg: null, title: 'Login - NovaVest' });
+  res.render('login', { error: null, success_msg: null, title: 'Login - ApexCrestVest' });
 });
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, user) => {
     if (!user) {
-      return res.render('login', { error: 'Invalid email or password', success_msg: null, title: 'Login - NovaVest' });
+      return res.render('login', { error: 'Invalid email or password', success_msg: null, title: 'Login - ApexCrestVest' });
     }
     if (user.status === 'blocked') {
-      return res.render('login', { error: 'Your account has been blocked. Contact support.', success_msg: null, title: 'Login - NovaVest' });
+      return res.render('login', { error: 'Your account has been blocked. Contact support.', success_msg: null, title: 'Login - ApexCrestVest' });
     }
     bcrypt.compare(password, user.password, (err, match) => {
       if (!match) {
-        return res.render('login', { error: 'Invalid email or password', success_msg: null, title: 'Login - NovaVest' });
+        return res.render('login', { error: 'Invalid email or password', success_msg: null, title: 'Login - ApexCrestVest' });
       }
       req.session.userId = user.id;
       req.session.userName = user.full_name;
@@ -177,7 +177,7 @@ app.get('/logout', (req, res) => {
 // Forgot Password - GET (show form)
 app.get('/forgot-password', (req, res) => {
   if (req.session.userId) return res.redirect('/dashboard');
-  res.render('forgot-password', { error: null, success: null, title: 'Forgot Password - NovaVest' });
+  res.render('forgot-password', { error: null, success: null, title: 'Forgot Password - ApexCrestVest' });
 });
 
 // Forgot Password - POST (send reset email)
@@ -189,7 +189,7 @@ app.post('/forgot-password', (req, res) => {
       return res.render('forgot-password', { 
         error: null, 
         success: 'If an account with that email exists, a password reset link has been sent. Please check your inbox and spam folder.', 
-        title: 'Forgot Password - NovaVest' 
+        title: 'Forgot Password - ApexCrestVest' 
       });
     }
     // Generate a secure random token
@@ -208,7 +208,7 @@ app.post('/forgot-password', (req, res) => {
       res.render('forgot-password', { 
         error: null, 
         success: 'If an account with that email exists, a password reset link has been sent. Please check your inbox and spam folder.', 
-        title: 'Forgot Password - NovaVest' 
+        title: 'Forgot Password - ApexCrestVest' 
       });
     });
   });
@@ -221,7 +221,7 @@ app.get('/reset-password', (req, res) => {
     return res.render('reset-password', { 
       error: 'Invalid or missing reset token. Please request a new password reset link.', 
       token: null, 
-      title: 'Reset Password - NovaVest' 
+      title: 'Reset Password - ApexCrestVest' 
     });
   }
   db.get(`SELECT * FROM users WHERE reset_token = ?`, [token], (err, user) => {
@@ -229,7 +229,7 @@ app.get('/reset-password', (req, res) => {
       return res.render('reset-password', { 
         error: 'This reset link is invalid or has already been used. Please request a new password reset link.', 
         token: null, 
-        title: 'Reset Password - NovaVest' 
+        title: 'Reset Password - ApexCrestVest' 
       });
     }
     // Check if token has expired
@@ -238,13 +238,13 @@ app.get('/reset-password', (req, res) => {
       return res.render('reset-password', { 
         error: 'This reset link has expired. Please request a new password reset link.', 
         token: null, 
-        title: 'Reset Password - NovaVest' 
+        title: 'Reset Password - ApexCrestVest' 
       });
     }
     res.render('reset-password', { 
       error: null, 
       token: token, 
-      title: 'Reset Password - NovaVest' 
+      title: 'Reset Password - ApexCrestVest' 
     });
   });
 });
@@ -258,21 +258,21 @@ app.post('/reset-password', (req, res) => {
     return res.render('reset-password', { 
       error: 'Invalid or missing reset token. Please request a new password reset link.', 
       token: null, 
-      title: 'Reset Password - NovaVest' 
+      title: 'Reset Password - ApexCrestVest' 
     });
   }
   if (password !== confirm_password) {
     return res.render('reset-password', { 
       error: 'Passwords do not match. Please try again.', 
       token: token, 
-      title: 'Reset Password - NovaVest' 
+      title: 'Reset Password - ApexCrestVest' 
     });
   }
   if (password.length < 6) {
     return res.render('reset-password', { 
       error: 'Password must be at least 6 characters long.', 
       token: token, 
-      title: 'Reset Password - NovaVest' 
+      title: 'Reset Password - ApexCrestVest' 
     });
   }
 
@@ -281,7 +281,7 @@ app.post('/reset-password', (req, res) => {
       return res.render('reset-password', { 
         error: 'This reset link is invalid or has already been used. Please request a new password reset link.', 
         token: null, 
-        title: 'Reset Password - NovaVest' 
+        title: 'Reset Password - ApexCrestVest' 
       });
     }
     const expires = new Date(user.reset_expires);
@@ -289,7 +289,7 @@ app.post('/reset-password', (req, res) => {
       return res.render('reset-password', { 
         error: 'This reset link has expired. Please request a new password reset link.', 
         token: null, 
-        title: 'Reset Password - NovaVest' 
+        title: 'Reset Password - ApexCrestVest' 
       });
     }
 
@@ -299,7 +299,7 @@ app.post('/reset-password', (req, res) => {
           return res.render('reset-password', { 
             error: 'An error occurred. Please try again.', 
             token: token, 
-            title: 'Reset Password - NovaVest' 
+            title: 'Reset Password - ApexCrestVest' 
           });
         }
         // Send confirmation email
@@ -310,7 +310,7 @@ app.post('/reset-password', (req, res) => {
         res.render('login', { 
           error: null, 
           success_msg: 'Your password has been reset successfully. Please log in with your new password.',
-          title: 'Login - NovaVest' 
+          title: 'Login - ApexCrestVest' 
         });
       });
     });
@@ -333,7 +333,7 @@ app.get('/dashboard', requireUser, (req, res) => {
       db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 10`, [userId], (err, transactions) => {
         db.all(`SELECT * FROM deposits WHERE user_id = ? ORDER BY created_at DESC LIMIT 5`, [userId], (err, deposits) => {
           db.all(`SELECT * FROM plans WHERE active = 1 ORDER BY min_deposit ASC`, (err, plans) => {
-            res.render('dashboard', { user, investments: investments||[], transactions: transactions||[], deposits: deposits||[], plans: plans||[], active: 'overview', title: 'Dashboard - NovaVest' });
+            res.render('dashboard', { user, investments: investments||[], transactions: transactions||[], deposits: deposits||[], plans: plans||[], active: 'overview', title: 'Dashboard - ApexCrestVest' });
           });
         });
       });
@@ -347,7 +347,7 @@ app.get('/deposit', requireUser, (req, res) => {
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     db.all(`SELECT * FROM wallets WHERE active = 1 ORDER BY currency`, (err, wallets) => {
       db.all(`SELECT * FROM deposits WHERE user_id = ? ORDER BY created_at DESC`, [userId], (err, deposits) => {
-        res.render('deposit', { user, wallets: wallets||[], deposits: deposits||[], active: 'deposit', req_query_success: req.query.success === '1', title: 'Deposit - NovaVest' });
+        res.render('deposit', { user, wallets: wallets||[], deposits: deposits||[], active: 'deposit', req_query_success: req.query.success === '1', title: 'Deposit - ApexCrestVest' });
       });
     });
   });
@@ -382,7 +382,7 @@ app.get('/invest', requireUser, (req, res) => {
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     db.all(`SELECT * FROM plans WHERE active = 1 ORDER BY min_deposit ASC`, (err, plans) => {
       db.all(`SELECT * FROM investments WHERE user_id = ? ORDER BY created_at DESC`, [userId], (err, investments) => {
-        res.render('invest', { user, plans: plans||[], investments: investments||[], active: 'invest', req_query_success: req.query.success === '1', req_query_error: req.query.error === '1', title: 'Invest - NovaVest' });
+        res.render('invest', { user, plans: plans||[], investments: investments||[], active: 'invest', req_query_success: req.query.success === '1', req_query_error: req.query.error === '1', title: 'Invest - ApexCrestVest' });
       });
     });
   });
@@ -423,7 +423,7 @@ app.get('/withdraw', requireUser, (req, res) => {
   const userId = req.session.userId;
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     db.all(`SELECT * FROM withdrawals WHERE user_id = ? ORDER BY created_at DESC`, [userId], (err, withdrawals) => {
-      res.render('withdraw', { user, withdrawals: withdrawals||[], active: 'withdraw', req_query_success: req.query.success === '1', req_query_error: req.query.error === '1', title: 'Withdraw - NovaVest' });
+      res.render('withdraw', { user, withdrawals: withdrawals||[], active: 'withdraw', req_query_success: req.query.success === '1', req_query_error: req.query.error === '1', title: 'Withdraw - ApexCrestVest' });
     });
   });
 });
@@ -455,7 +455,7 @@ app.get('/transactions', requireUser, (req, res) => {
   const userId = req.session.userId;
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC`, [userId], (err, transactions) => {
-      res.render('transactions', { user, transactions: transactions||[], active: 'transactions', title: 'Transactions - NovaVest' });
+      res.render('transactions', { user, transactions: transactions||[], active: 'transactions', title: 'Transactions - ApexCrestVest' });
     });
   });
 });
@@ -479,7 +479,7 @@ app.get('/transactions/:id', requireUser, (req, res) => {
 
   db.get(`SELECT * FROM transactions WHERE id = ? AND user_id = ?`, [txnId, userId], (err, txn) => {
     if (!txn) {
-      return res.status(404).render('error', { message: 'Transaction not found', title: 'Not Found - NovaVest' });
+      return res.status(404).render('error', { message: 'Transaction not found', title: 'Not Found - ApexCrestVest' });
     }
 
     db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
@@ -516,7 +516,7 @@ app.get('/transactions/:id', requireUser, (req, res) => {
         gasFee = network.includes('Bitcoin') ? 0.00002345 : network.includes('Ethereum') ? 0.00345678 : 0.00000234;
       } else if (txn.type === 'interest' || txn.type === 'bonus' || txn.type === 'investment') {
         network = 'Internal Transfer';
-        fromAddr = 'NovaVest Investment Pool';
+        fromAddr = 'ApexCrestVest Investment Pool';
         toAddr = user.email;
         gasFee = 0;
       }
@@ -528,7 +528,7 @@ app.get('/transactions/:id', requireUser, (req, res) => {
         user, txn, txHash, confirmations, blockHeight, network,
         fromAddr, toAddr, gasFee, formattedAmount,
         active: 'transactions',
-        title: `Transaction ${txHash.substring(0, 12)}... - NovaVest`
+        title: `Transaction ${txHash.substring(0, 12)}... - ApexCrestVest`
       });
     });
   });
@@ -544,7 +544,7 @@ app.get('/referral', requireUser, (req, res) => {
     db.all(`SELECT full_name, created_at FROM users WHERE referred_by = ? ORDER BY created_at DESC`, [user.referral_code], (err, referrals) => {
       db.all(`SELECT amount FROM transactions WHERE user_id = ? AND type = 'bonus' AND description = 'Referral Bonus'`, [userId], (err, refBonuses) => {
         const totalReferralEarnings = (refBonuses || []).reduce((sum, b) => sum + b.amount, 0);
-        res.render('referral', { user, referralLink, referrals: referrals || [], totalReferralEarnings, active: 'referral', title: 'Referral Program - NovaVest' });
+        res.render('referral', { user, referralLink, referrals: referrals || [], totalReferralEarnings, active: 'referral', title: 'Referral Program - ApexCrestVest' });
       });
     });
   });
@@ -554,7 +554,7 @@ app.get('/referral', requireUser, (req, res) => {
 app.get('/profile', requireUser, (req, res) => {
   const userId = req.session.userId;
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
-    res.render('profile', { user, active: 'profile', title: 'Profile - NovaVest' });
+    res.render('profile', { user, active: 'profile', title: 'Profile - ApexCrestVest' });
   });
 });
 
@@ -566,7 +566,7 @@ app.get('/support', requireUser, (req, res) => {
     db.all(`SELECT * FROM messages WHERE user_id = ? ORDER BY created_at ASC`, [userId], (err, messages) => {
       // mark admin messages as read
       db.run(`UPDATE messages SET read_status = 1 WHERE user_id = ? AND sender = 'admin'`, [userId]);
-      res.render('support', { user, messages: messages||[], active: 'support', title: 'Support - NovaVest' });
+      res.render('support', { user, messages: messages||[], active: 'support', title: 'Support - ApexCrestVest' });
     });
   });
 });
@@ -593,18 +593,18 @@ app.get('/support/messages', requireUser, (req, res) => {
 
 app.get('/admin/login', (req, res) => {
   if (req.session.adminId) return res.redirect('/admin');
-  res.render('admin/login', { error: null, title: 'Admin Login - NovaVest' });
+  res.render('admin/login', { error: null, title: 'Admin Login - ApexCrestVest' });
 });
 
 app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;
   db.get(`SELECT * FROM admins WHERE username = ?`, [username], (err, admin) => {
     if (!admin) {
-      return res.render('admin/login', { error: 'Invalid credentials', title: 'Admin Login - NovaVest' });
+      return res.render('admin/login', { error: 'Invalid credentials', title: 'Admin Login - ApexCrestVest' });
     }
     bcrypt.compare(password, admin.password, (err, match) => {
       if (!match) {
-        return res.render('admin/login', { error: 'Invalid credentials', title: 'Admin Login - NovaVest' });
+        return res.render('admin/login', { error: 'Invalid credentials', title: 'Admin Login - ApexCrestVest' });
       }
       req.session.adminId = admin.id;
       req.session.adminName = admin.username;
@@ -630,7 +630,7 @@ app.get('/admin', requireAdmin, (req, res) => {
                 recentUsers: recentUsers || [],
                 active: 'overview',
                 adminName: req.session.adminName,
-                title: 'Admin Dashboard - NovaVest'
+                title: 'Admin Dashboard - ApexCrestVest'
               });
             });
           });
@@ -643,7 +643,7 @@ app.get('/admin', requireAdmin, (req, res) => {
 // Admin - Users
 app.get('/admin/users', requireAdmin, (req, res) => {
   db.all(`SELECT * FROM users WHERE is_admin = 0 ORDER BY created_at DESC`, (err, users) => {
-    res.render('admin/users', { users: users||[], active: 'users', adminName: req.session.adminName, title: 'Users - NovaVest Admin' });
+    res.render('admin/users', { users: users||[], active: 'users', adminName: req.session.adminName, title: 'Users - ApexCrestVest Admin' });
   });
 });
 
@@ -661,7 +661,7 @@ app.get('/admin/users/:id', requireAdmin, (req, res) => {
                 transactions: transactions||[], withdrawals: withdrawals||[], 
                 activities: activities||[], active: 'users', adminName: req.session.adminName,
                 req_query_generated: req.query.generated,
-                title: `User: ${user?.full_name} - NovaVest Admin`
+                title: `User: ${user?.full_name} - ApexCrestVest Admin`
               });
             });
           });
@@ -731,7 +731,7 @@ app.get('/admin/generate-transactions', requireAdmin, (req, res) => {
       res.render('admin/generate-transactions', { 
         users: users || [], plans: plans || [], active: 'generate', adminName: req.session.adminName,
         req_query_success: req.query.success, req_query_user: req.query.user,
-        title: 'Generate Transactions - NovaVest Admin'
+        title: 'Generate Transactions - ApexCrestVest Admin'
       });
     });
   });
@@ -860,7 +860,7 @@ app.post('/admin/generate-transactions/batch', requireAdmin, (req, res) => {
 // Admin - Deposits
 app.get('/admin/deposits', requireAdmin, (req, res) => {
   db.all(`SELECT d.*, u.full_name, u.email FROM deposits d JOIN users u ON d.user_id = u.id ORDER BY d.created_at DESC`, (err, deposits) => {
-    res.render('admin/deposits', { deposits: deposits||[], active: 'deposits', adminName: req.session.adminName, title: 'Deposits - NovaVest Admin' });
+    res.render('admin/deposits', { deposits: deposits||[], active: 'deposits', adminName: req.session.adminName, title: 'Deposits - ApexCrestVest Admin' });
   });
 });
 
@@ -897,7 +897,7 @@ app.post('/admin/deposits/:id/reject', requireAdmin, (req, res) => {
 // Admin - Withdrawals
 app.get('/admin/withdrawals', requireAdmin, (req, res) => {
   db.all(`SELECT w.*, u.full_name, u.email FROM withdrawals w JOIN users u ON w.user_id = u.id ORDER BY w.created_at DESC`, (err, withdrawals) => {
-    res.render('admin/withdrawals', { withdrawals: withdrawals||[], active: 'withdrawals', adminName: req.session.adminName, title: 'Withdrawals - NovaVest Admin' });
+    res.render('admin/withdrawals', { withdrawals: withdrawals||[], active: 'withdrawals', adminName: req.session.adminName, title: 'Withdrawals - ApexCrestVest Admin' });
   });
 });
 
@@ -931,7 +931,7 @@ app.post('/admin/withdrawals/:id/reject', requireAdmin, (req, res) => {
 // Admin - Wallets (editable)
 app.get('/admin/wallets', requireAdmin, (req, res) => {
   db.all(`SELECT * FROM wallets ORDER BY currency`, (err, wallets) => {
-    res.render('admin/wallets', { wallets: wallets||[], active: 'wallets', adminName: req.session.adminName, title: 'Wallets - NovaVest Admin' });
+    res.render('admin/wallets', { wallets: wallets||[], active: 'wallets', adminName: req.session.adminName, title: 'Wallets - ApexCrestVest Admin' });
   });
 });
 
@@ -959,7 +959,7 @@ app.post('/admin/wallets/:id/delete', requireAdmin, (req, res) => {
 // Admin - Plans management
 app.get('/admin/plans', requireAdmin, (req, res) => {
   db.all(`SELECT * FROM plans ORDER BY min_deposit ASC`, (err, plans) => {
-    res.render('admin/plans', { plans: plans||[], active: 'plans', adminName: req.session.adminName, title: 'Plans - NovaVest Admin' });
+    res.render('admin/plans', { plans: plans||[], active: 'plans', adminName: req.session.adminName, title: 'Plans - ApexCrestVest Admin' });
   });
 });
 
@@ -993,7 +993,7 @@ app.get('/admin/support', requireAdmin, (req, res) => {
           (SELECT COUNT(*) FROM messages WHERE user_id = u.id AND sender = 'user' AND read_status = 0) as unread
           FROM users u WHERE u.is_admin = 0 AND EXISTS (SELECT 1 FROM messages WHERE user_id = u.id)
           ORDER BY last_time DESC`, (err, users) => {
-    res.render('admin/support', { users: users||[], active: 'support', adminName: req.session.adminName, title: 'Support - NovaVest Admin' });
+    res.render('admin/support', { users: users||[], active: 'support', adminName: req.session.adminName, title: 'Support - ApexCrestVest Admin' });
   });
 });
 
@@ -1023,7 +1023,7 @@ app.post('/admin/support/:userId/send', requireAdmin, (req, res) => {
 // Admin - Activity log
 app.get('/admin/activity', requireAdmin, (req, res) => {
   db.all(`SELECT a.*, u.full_name, u.email FROM activity_log a LEFT JOIN users u ON a.user_id = u.id ORDER BY a.created_at DESC LIMIT 100`, (err, activities) => {
-    res.render('admin/activity', { activities: activities||[], active: 'activity', adminName: req.session.adminName, title: 'Activity Log - NovaVest Admin' });
+    res.render('admin/activity', { activities: activities||[], active: 'activity', adminName: req.session.adminName, title: 'Activity Log - ApexCrestVest Admin' });
   });
 });
 
@@ -1047,12 +1047,12 @@ io.on('connection', (socket) => {
 
 // ============ HEALTHCHECK (for Railway / uptime monitors) ============
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', service: 'novavest', time: new Date().toISOString() });
+  res.status(200).json({ status: 'ok', service: 'apexcrestvest', time: new Date().toISOString() });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`NovaVest server running on port ${PORT}`);
+  console.log(`ApexCrestVest server running on port ${PORT}`);
   console.log(`Admin login: admin / admin123`);
 });
 

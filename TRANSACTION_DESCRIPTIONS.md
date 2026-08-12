@@ -1,4 +1,4 @@
-# NovaVest — Realistic Transaction Descriptions Reference
+# ApexCrestVest — Realistic Transaction Descriptions Reference
 
 When generating transaction history from the admin panel, you can type any of these descriptions
 into the "Description" field to make transactions look completely real and believable.

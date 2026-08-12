@@ -1,4 +1,4 @@
-# NovaVest — Premium Investment Platform
+# ApexCrestVest — Premium Investment Platform
 
 A full-stack investment platform built with Node.js, Express, SQLite, and Socket.io. Features worldwide user signup with country-specific ID fields, individual dashboards, an admin control panel, copy-to-deposit crypto wallets, real-time chat support, and automated email notifications via Resend.com.
 
@@ -52,7 +52,7 @@ Create a `.env` file (see `.env.example`):
 
 ```env
 RESEND_API_KEY=re_your_api_key_here
-RESEND_FROM_EMAIL=NovaVest <noreply@yourdomain.com>
+RESEND_FROM_EMAIL=ApexCrestVest <noreply@yourdomain.com>
 FRONTEND_URL=https://your-app-url.com
 PORT=3000
 ```
@@ -106,7 +106,7 @@ Railway is the recommended host because it supports persistent processes, WebSoc
 ## Project Structure
 
 ```
-novavest/
+apexcrestvest/
 ├── server.js              # Main application (all routes + Socket.io)
 ├── package.json
 ├── Procfile               # Railway/deployment config

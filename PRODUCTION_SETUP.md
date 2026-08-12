@@ -1,6 +1,6 @@
-# NovaVest — Production Setup Checklist
+# ApexCrestVest — Production Setup Checklist
 
-This guide covers everything you need to do after adding your custom domain to make NovaVest fully operational in production.
+This guide covers everything you need to do after adding your custom domain to make ApexCrestVest fully operational in production.
 
 ---
 
@@ -11,12 +11,12 @@ This guide covers everything you need to do after adding your custom domain to m
 Railway's filesystem is **ephemeral** — your SQLite database gets wiped on every redeploy or restart. This is the **most important** step.
 
 **Steps:**
-1. Go to Railway → your NovaVest project → **Settings** → **Volumes**
+1. Go to Railway → your ApexCrestVest project → **Settings** → **Volumes**
 2. Click **Add Volume**
 3. Mount path: `/data`
 4. Go to the **Variables** tab and add:
    ```
-   DB_PATH=/data/novavest.db
+   DB_PATH=/data/apexcrestvest.db
    ```
 5. Redeploy the app
 
@@ -63,7 +63,7 @@ They are currently **silently skipped** because no API key is set.
 ### Step 1: Add Your Domain to Resend
 1. Log into [resend.com/domains](https://resend.com/domains)
 2. Click **Add Domain**
-3. Enter your domain (e.g., `novavest.com`)
+3. Enter your domain (e.g., `apexcrestvest.com`)
 4. Resend provides DNS records (SPF, DKIM, MX, Return-Path)
 
 ### Step 2: Add DNS Records
@@ -78,14 +78,14 @@ They are currently **silently skipped** because no API key is set.
 
 ### Step 3: Get API Key
 1. Go to [resend.com/api-keys](https://resend.com/api-keys)
-2. Create new API key → name it "NovaVest Production"
+2. Create new API key → name it "ApexCrestVest Production"
 3. Copy the key (starts with `re_...`)
 
 ### Step 4: Set Environment Variables on Railway
 Go to Railway → **Variables** tab and add:
 ```
 RESEND_API_KEY=re_your_api_key_here
-RESEND_FROM_EMAIL=NovaVest <noreply@yourdomain.com>
+RESEND_FROM_EMAIL=ApexCrestVest <noreply@yourdomain.com>
 FRONTEND_URL=https://yourdomain.com
 ```
 
@@ -103,7 +103,7 @@ FRONTEND_URL=https://yourdomain.com
 ### Step 1: Add Custom Domain
 1. Go to Railway → your project → **Settings** → **Networking**
 2. Click **Custom Domain** (or "Generate Domain" for a free `.up.railway.app` subdomain)
-3. Enter your domain (e.g., `novavest.com` or `app.novavest.com`)
+3. Enter your domain (e.g., `apexcrestvest.com` or `app.apexcrestvest.com`)
 4. Railway gives you a **CNAME record** to add
 
 ### Step 2: Add CNAME Record
@@ -154,7 +154,7 @@ Currently, there's no rate limiting on login/signup endpoints. For production wi
 ### Backup Your Database
 Even with a persistent volume, it's good practice to periodically back up your database:
 1. SSH into Railway (or use Railway CLI)
-2. Copy `/data/novavest.db` to a safe location
+2. Copy `/data/apexcrestvest.db` to a safe location
 3. Or use Railway's volume snapshot feature if available
 
 ---
@@ -165,11 +165,11 @@ Set ALL of these on Railway → **Variables** tab:
 
 | Variable | Required | Example | Purpose |
 |----------|----------|---------|---------|
-| `DB_PATH` | ✅ YES | `/data/novavest.db` | Database file path (persistent volume) |
+| `DB_PATH` | ✅ YES | `/data/apexcrestvest.db` | Database file path (persistent volume) |
 | `SESSION_SECRET` | ✅ YES | (random 64-char string) | Session encryption |
 | `ADMIN_PASSWORD` | ✅ YES | (your secure password) | Admin login password |
 | `RESEND_API_KEY` | ✅ YES | `re_abc123...` | Email notifications |
-| `RESEND_FROM_EMAIL` | ✅ YES | `NovaVest <noreply@yourdomain.com>` | Sender email address |
+| `RESEND_FROM_EMAIL` | ✅ YES | `ApexCrestVest <noreply@yourdomain.com>` | Sender email address |
 | `FRONTEND_URL` | ✅ YES | `https://yourdomain.com` | Email link URLs |
 | `NODE_ENV` | Optional | `production` | Express production mode |
 
@@ -179,7 +179,7 @@ Set ALL of these on Railway → **Variables** tab:
 
 After setting everything up, test these:
 
-1. **Visit your domain** → should show NovaVest landing page with HTTPS ✅
+1. **Visit your domain** → should show ApexCrestVest landing page with HTTPS ✅
 2. **Sign up a new user** → should receive welcome email ✅
 3. **Log in as admin** → should access admin dashboard ✅
 4. **Submit a deposit as user** → should receive deposit email ✅

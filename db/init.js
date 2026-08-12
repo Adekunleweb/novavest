@@ -4,9 +4,9 @@ const path = require('path');
 const fs = require('fs');
 
 // DB path — can be overridden with DB_PATH env var for persistent volumes
-// On Railway, set DB_PATH to a volume mount like /data/novavest.db for persistence.
+// On Railway, set DB_PATH to a volume mount like /data/apexcrestvest.db for persistence.
 // Default: write inside the app's own directory (writable on Railway's container).
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'novavest.db');
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'apexcrestvest.db');
 
 // Ensure directory exists for the DB file
 const dbDir = path.dirname(dbPath);
