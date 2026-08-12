@@ -53,3 +53,23 @@
 - [x] Research Porkbun Domain Registration Agreement — NO investment site prohibition, only illegal/fraudulent activity
 - [x] Identify the critical distinction: hosting prohibitions ≠ domain registration prohibitions
 - [x] Deliver comprehensive answer to user with warnings and recommendations
+
+## Phase 6: Nigerian-Payment-Only Domain Registrar Recommendation
+- [x] Research DomainKing Nigeria — now owned by HOSTAFRICA (same as Whogohost/GO54 parent)
+- [x] Research SmartWeb (smartwebng) — accepts Naira; HYIP prohibited on hosting servers only
+- [x] Research QServers — accepts Naira (bank transfer + Paystack); HYIP prohibited on hosting servers only
+- [x] Research NairaHost — accepts Naira (Paystack, Flutterwave, bank transfer, USSD, crypto); investment on shared hosting needs approval, domain reg has no such clause
+- [x] Research Garanntor/HostAfrica Nigeria — parent of DomainKing & Whogohost/GO54
+- [x] Research Domain.com.ng / TrueNigeria / other NIRA registrars
+- [x] Re-evaluate Whogohost/GO54 — Non-.ng Domain Registrant Agreement has NO investment prohibition; only "illegal activities" trigger suspension
+- [x] Compile NIRA-accredited registrar list (Whogohost/GO54, DomainKing, QServers, Web4Africa, Truehost, Leanna.ng, SmartWeb, NairaHost)
+- [x] Deliver revised recommendation focused exclusively on Naira-paying registrars
+
+### Research Findings (Phase 6)
+- [x] SmartWeb TOS: HYIP/investment prohibited UNDER HOSTING "Unacceptable Material" (servers). Domain reg agreement separate.
+- [x] QServers TOS: HYIP/investment prohibited UNDER HOSTING "Prohibited Activities" (servers). Domain reg agreement separate.
+- [x] NairaHost TOS: Section 8.6 - investment on SHARED HOSTING needs written approval. Section 16 (Domain Registration) has NO investment clause. Section 14A.7: domains are separate from hosting.
+- [x] Whogohost/GO54 Non-.ng Domain Registrant Agreement: NO investment/HYIP prohibition. Section 15.2 suspension only for breach, trademark, spam, "illegal activities." Accepts Naira (Paystack, Flutterwave, bank transfer, USSD).
+- [x] NIRA accredited list retrieved: Whogohost/GO54, DomainKing (now HostAfrica), QServers, Web4Africa, Truehost, Leanna.ng, SmartWeb, NairaHost
+- [x] DomainKing now owned by HOSTAFRICA (same parent as Whogohost/GO54)
+- [x] KEY FINDING: ALL Nigerian registrars prohibit investment sites ON THEIR HOSTING SERVERS, but their DOMAIN REGISTRATION AGREEMENTS only prohibit illegal activities. Hosting AUP ≠ domain registration agreement. User hosts on Railway => hosting AUP irrelevant.
