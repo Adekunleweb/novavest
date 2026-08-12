@@ -54,6 +54,22 @@
 - [x] Identify the critical distinction: hosting prohibitions ≠ domain registration prohibitions
 - [x] Deliver comprehensive answer to user with warnings and recommendations
 
+## Phase 9: Payment Not Reflecting — Troubleshooting
+
+- [x] Research Whogohost payment confirmation delays (card vs bank transfer vs USSD)
+- [x] Research Paystack "Pay with Transfer" 30-minute expiry window (critical finding)
+- [x] Get Whogohost support channels (live chat 24/7, email/ticket within 24hrs, panel.whogohost.com/support)
+- [x] Deliver troubleshooting guide to user
+
+### Research Findings (Phase 9)
+- [x] CRITICAL: Paystack "Pay with Transfer" generates a temporary virtual account (Wema/Paystack-Titan) that EXPIRES after 30 minutes. If transfer arrives after 30-min window → transaction fails → auto-refund within 24hrs
+- [x] If user paid via "Pay with Transfer" and took >30 min to complete the transfer, this is likely the cause
+- [x] Card payment (Paystack card) = should be instant; if not reflecting, may be a Paystack webhook delay to Whogohost
+- [x] Bank transfer (direct to Whogohost's own bank account, not Paystack virtual) = manual confirmation, can take 1+ hours
+- [x] USSD = usually instant but can have network delays
+- [x] Whogohost support: Live Chat (24/7, fastest) at panel.whogohost.com/support/select-department; Email/ticket (within 24hrs); Office: Plot 3A Olumuyiwa Street, Omole Phase 1, Lagos
+- [x] Solution path: (1) Check payment method used, (2) Check if debited, (3) Check invoice status in dashboard, (4) Use live chat with proof of payment, (5) If Pay with Transfer expired, wait for auto-refund then retry
+
 ## Phase 8: Domain Privacy Protection Cost Concern
 
 - [x] Research ICANN post-GDPR WHOIS redaction policy (registrars MUST redact personal data by default — free, not paid)
