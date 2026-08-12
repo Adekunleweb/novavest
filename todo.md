@@ -44,3 +44,12 @@
 - [x] Confirm push succeeded via GitHub API
 
 ## ✅ REBRAND COMPLETE
+
+## Phase 5: Domain Registrar Recommendation (Nigerian Payment + Reliability + No Account Closure)
+- [x] Research Whogohost TOS — found HYIP/investment site prohibition (applies to hosting)
+- [x] Research Namecheap Universal TOS — found HYIP/investment site prohibition (under "uploads unacceptable material" = hosting)
+- [x] Research Namecheap Hosting AUP — confirmed HYIP prohibition is hosting-specific
+- [x] Research Cloudflare Domain Registration Agreement — NO investment site prohibition, only illegal/fraudulent activity
+- [x] Research Porkbun Domain Registration Agreement — NO investment site prohibition, only illegal/fraudulent activity
+- [x] Identify the critical distinction: hosting prohibitions ≠ domain registration prohibitions
+- [x] Deliver comprehensive answer to user with warnings and recommendations
