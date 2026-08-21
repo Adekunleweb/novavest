@@ -324,6 +324,79 @@ async function notifyBroadcastReplyAlert(adminEmail, userName, userEmail, broadc
   return sendEmail(adminEmail, 'Broadcast Reply — ' + broadcastSubject + ' 💬', content);
 }
 
+// Auto-reply sent instantly when a user opens a support ticket / sends a message
+async function notifyAutoReply(user) {
+  const content = `
+    <h2 style="margin:0 0 20px;color:#e6f1ff;font-size:22px;">We've Received Your Message 📨</h2>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      Hello ${user.full_name}, thank you for reaching out to ApexCrestVest Support.
+    </p>
+    <div style="background:#0a1628;border-radius:10px;padding:20px;margin:25px 0;border-left:3px solid #d4af37;">
+      <p style="margin:0 0 10px;color:#8892b0;font-size:13px;">Auto-Reply:</p>
+      <p style="margin:0;color:#e6f1ff;font-size:15px;line-height:1.7;">
+        This is to confirm we've received your message. A representative will be with you shortly.
+        Our average response time is just a few minutes during business hours.
+      </p>
+      <p style="margin:12px 0 0;color:#e6f1ff;font-size:15px;line-height:1.7;">
+        In the meantime, you can continue the conversation in the live support chat inside your dashboard —
+        we'll reply there as soon as we're online.
+      </p>
+    </div>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${frontendUrl}/support" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Open Support Chat</a>
+    </div>
+    <p style="color:#8892b0;font-size:13px;line-height:1.6;">
+      This is an automated message. Please don't reply to this email — use the live chat in your dashboard instead.
+    </p>`;
+  return sendEmail(user.email, 'We\'ve Received Your Message — ApexCrestVest Support 📨', content);
+}
+
+// Alert ALL admins by email when a user sends a support message
+async function notifySupportTicketAlert(adminEmail, userName, userEmail, message) {
+  const content = `
+    <h2 style="margin:0 0 20px;color:#e6f1ff;font-size:22px;">New Support Ticket 🎫</h2>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      A user has sent a new message to customer support.
+    </p>
+    <div style="background:#0a1628;border-radius:10px;padding:20px;margin:25px 0;border-left:3px solid #f0ad4e;">
+      <p style="margin:0 0 8px;color:#8892b0;font-size:13px;">From:</p>
+      <p style="margin:0 0 16px;color:#e6f1ff;font-size:15px;">${userName} &lt;${userEmail}&gt;</p>
+      <p style="margin:0 0 8px;color:#8892b0;font-size:13px;">Message:</p>
+      <p style="margin:0;color:#e6f1ff;font-size:15px;line-height:1.7;">"${message}"</p>
+    </div>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      An auto-reply has already been sent to the user. Please respond promptly in the admin Support chat.
+    </p>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${frontendUrl}/admin/support" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Open Admin Support Chat</a>
+    </div>`;
+  return sendEmail(adminEmail, '🎫 New Support Ticket from ' + userName, content);
+}
+
+// Individual 1-to-1 message from admin to a single user
+async function notifyIndividualMessage(user, subject, body) {
+  const bodyHtml = String(body)
+    .split(/\r?\n/)
+    .filter((line) => line.trim().length > 0)
+    .map((line) => `      <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">${line}</p>`)
+    .join('\n');
+
+  const content = `
+    <h2 style="margin:0 0 20px;color:#e6f1ff;font-size:22px;">Message from ApexCrestVest ✉️</h2>
+    <p style="color:#d4af37;font-size:13px;letter-spacing:1px;text-transform:uppercase;margin:0 0 20px;">Personal Message</p>
+    <p style="color:#e6f1ff;font-size:18px;font-weight:600;margin:0 0 20px;">${subject}</p>
+    <div style="background:#0a1628;border-radius:10px;padding:20px;margin:25px 0;border-left:3px solid #d4af37;">
+${bodyHtml}
+    </div>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      Hello ${user.full_name}, this is a personal message from the ApexCrestVest team. You can reply to us anytime via the live support chat in your dashboard.
+    </p>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${frontendUrl}/support" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Open Support Chat to Reply</a>
+    </div>`;
+  return sendEmail(user.email, subject + ' — ApexCrestVest ✉️', content);
+}
+
 module.exports = {
   sendEmail,
   notifySignup,
@@ -337,6 +410,9 @@ module.exports = {
   notifyChatReply,
   notifyBroadcast,
   notifyBroadcastReplyAlert,
+  notifyAutoReply,
+  notifySupportTicketAlert,
+  notifyIndividualMessage,
   notifyPasswordReset,
   notifyPasswordChanged
 };

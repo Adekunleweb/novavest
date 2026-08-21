@@ -10,6 +10,7 @@ const { Server } = require('socket.io');
 
 const db = require('./db/init');
 const countries = require('./db/countries');
+const campaignTemplates = require('./db/campaign-templates');
 const { requireUser, requireAdmin } = require('./middleware/auth');
 const mailer = require('./utils/mailer');
 
@@ -577,7 +578,31 @@ app.post('/support/send', requireUser, (req, res) => {
   db.run(`INSERT INTO messages (user_id, sender, message) VALUES (?, 'user', ?)`, [userId, message], function() {
     const msgId = this.lastID;
     io.to('admin-room').emit('new_message', { id: msgId, user_id: userId, sender: 'user', message, created_at: new Date().toISOString() });
-    res.json({ success: true });
+    res.json({ success: true, autoReply: 'A representative will be with you shortly.' });
+
+    // --- Auto-reply: save an admin message in the thread + email the user ---
+    db.get(`SELECT * FROM users WHERE id = ?`, [userId], (e, user) => {
+      if (user) {
+        const autoText = 'Thanks for reaching out! A representative will be with you shortly. In the meantime, feel free to share any additional details about your request.';
+        db.run(`INSERT INTO messages (user_id, sender, message) VALUES (?, 'admin', ?)`, [userId, autoText], function () {
+          io.to('user-room-' + userId).emit('admin_message', {
+            id: this.lastID, sender: 'admin', message: autoText, created_at: new Date().toISOString()
+          });
+        });
+        // Email the user an auto-reply confirmation
+        mailer.notifyAutoReply(user).catch((err) => console.error('[AUTOREPLY] email failed:', err && err.message));
+
+        // --- Notify ALL admins by email about this new support ticket ---
+        db.all(`SELECT email FROM admins`, (e2, admins) => {
+          (admins || []).forEach((a) => {
+            if (a && a.email) {
+              mailer.notifySupportTicketAlert(a.email, user.full_name, user.email, message)
+                .catch((err) => console.error('[TICKET ALERT] email failed:', err && err.message));
+            }
+          });
+        });
+      }
+    });
   });
 });
 
@@ -1176,6 +1201,134 @@ app.get('/admin/messages/campaign/:id/replies', requireAdmin, (req, res) => {
       res.json({ broadcast, replies: replies || [] });
     });
   });
+});
+
+// --- Helper: fill {{name}}, {{balance}}, {{plan_name}} in a template body/subject ---
+function fillTemplate(text, user) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\{\{\s*name\s*\}\}/gi, user ? (user.full_name || 'there') : 'there')
+    .replace(/\{\{\s*balance\s*\}\}/gi, user ? ('$' + Number(user.balance || 0).toFixed(2)) : '$0.00')
+    .replace(/\{\{\s*plan_name\s*\}\}/gi, user && user.last_plan ? user.last_plan : 'your chosen plan');
+}
+
+// Admin - Send an individual 1-to-1 message to a single user (DB + email)
+app.post('/admin/messages/send-individual', requireAdmin, (req, res) => {
+  const { userId, subject, body } = req.body;
+  if (!userId || !subject || !body) return res.status(400).json({ success: false, error: 'User, subject and message are required.' });
+  db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+    if (!user) return res.status(404).json({ success: false, error: 'User not found.' });
+    // 1) Save into the support thread as an admin message so it shows in Support chat
+    db.run(`INSERT INTO messages (user_id, sender, message) VALUES (?, 'admin', ?)`, [userId, subject + '\n' + body], function () {
+      io.to('user-room-' + userId).emit('admin_message', {
+        id: this.lastID, sender: 'admin', message: subject + '\n' + body, created_at: new Date().toISOString()
+      });
+    });
+    // 2) Email the user with the individual message template
+    mailer.notifyIndividualMessage(user, subject, body).catch((e) => console.error('[INDIVIDUAL] email failed:', e && e.message));
+    // 3) Also record as a broadcast of audience=individual for history
+    db.run(`INSERT INTO broadcasts (subject, body, audience, recipient_count, sent_by) VALUES (?, ?, 'individual', 1, ?)`,
+      [subject, body, req.session.adminName || 'Admin']);
+    res.json({ success: true, userName: user.full_name, userEmail: user.email });
+  });
+});
+
+// Admin - Search users (for the individual message picker)
+app.get('/admin/messages/users', requireAdmin, (req, res) => {
+  const q = (req.query.q || '').toString().trim();
+  let sql, params;
+  if (q) {
+    sql = `SELECT id, full_name, email, balance, created_at FROM users
+           WHERE (is_admin = 0 OR is_admin IS NULL) AND (full_name LIKE ? OR email LIKE ?)
+           ORDER BY created_at DESC LIMIT 50`;
+    params = ['%' + q + '%', '%' + q + '%'];
+  } else {
+    sql = `SELECT id, full_name, email, balance, created_at FROM users
+           WHERE (is_admin = 0 OR is_admin IS NULL) ORDER BY created_at DESC LIMIT 50`;
+    params = [];
+  }
+  db.all(sql, params, (err, users) => {
+    res.json({ users: users || [] });
+  });
+});
+
+// Admin - List campaign message templates (built-in + custom from DB)
+app.get('/admin/messages/templates', requireAdmin, (req, res) => {
+  db.all(`SELECT * FROM campaign_templates ORDER BY created_at DESC`, (err, custom) => {
+    res.json({
+      builtin: campaignTemplates,
+      custom: custom || []
+    });
+  });
+});
+
+// Admin - Save a new custom template
+app.post('/admin/messages/templates/save', requireAdmin, (req, res) => {
+  const { title, category, subject, body } = req.body;
+  if (!title || !subject || !body) return res.status(400).json({ success: false, error: 'Title, subject and body are required.' });
+  db.run(`INSERT INTO campaign_templates (title, category, subject, body, is_custom) VALUES (?, ?, ?, ?, 1)`,
+    [title, category || 'Custom', subject, body], function () {
+      res.json({ success: true, id: this.lastID });
+    });
+});
+
+// Admin - Delete a custom template
+app.post('/admin/messages/templates/:id/delete', requireAdmin, (req, res) => {
+  db.run(`DELETE FROM campaign_templates WHERE id = ? AND is_custom = 1`, [req.params.id], function () {
+    res.json({ success: true, deleted: this.changes });
+  });
+});
+
+// Admin - Use a template to send a broadcast (fills variables per user)
+app.post('/admin/messages/templates/send', requireAdmin, (req, res) => {
+  const { templateId, source, mode, userId } = req.body; // source: 'builtin' | 'custom', mode: 'all' | 'individual'
+  let template = null;
+
+  const doSend = () => {
+    if (!template) return res.status(404).json({ success: false, error: 'Template not found.' });
+
+    if (mode === 'individual') {
+      if (!userId) return res.status(400).json({ success: false, error: 'Select a user for individual mode.' });
+      db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+        if (!user) return res.status(404).json({ success: false, error: 'User not found.' });
+        const subject = fillTemplate(template.subject, user);
+        const body = fillTemplate(template.body, user);
+        db.run(`INSERT INTO messages (user_id, sender, message) VALUES (?, 'admin', ?)`, [userId, subject + '\n' + body], function () {
+          io.to('user-room-' + userId).emit('admin_message', { id: this.lastID, sender: 'admin', message: subject + '\n' + body, created_at: new Date().toISOString() });
+        });
+        mailer.notifyIndividualMessage(user, subject, body).catch((e) => console.error('[TPL-IND] email failed:', e && e.message));
+        db.run(`INSERT INTO broadcasts (subject, body, audience, recipient_count, sent_by) VALUES (?, ?, 'individual', 1, ?)`, [subject, body, req.session.adminName || 'Admin']);
+        res.json({ success: true, recipient_count: 1, mode: 'individual' });
+      });
+    } else {
+      // broadcast to all
+      db.all(`SELECT * FROM users WHERE is_admin = 0 OR is_admin IS NULL`, (err, users) => {
+        const recipients = users || [];
+        recipients.forEach((u) => {
+          const subject = fillTemplate(template.subject, u);
+          const body = fillTemplate(template.body, u);
+          mailer.notifyBroadcast(u, subject, body).catch((e) => console.error('[TPL-ALL] email failed:', e && e.message));
+        });
+        db.run(`INSERT INTO broadcasts (subject, body, audience, recipient_count, sent_by) VALUES (?, ?, 'all', ?, ?)`,
+          [template.subject, template.body, recipients.length, req.session.adminName || 'Admin'], function () {
+            const bid = this.lastID;
+            recipients.forEach((u) => db.run(`INSERT OR IGNORE INTO broadcast_deliveries (broadcast_id, user_id, is_read) VALUES (?, ?, 0)`, [bid, u.id]));
+            io.to('admin-room').emit('broadcast_sent', { id: bid, subject: template.subject, recipient_count: recipients.length, created_at: new Date().toISOString() });
+            res.json({ success: true, recipient_count: recipients.length, broadcast_id: bid, mode: 'all' });
+          });
+      });
+    }
+  };
+
+  if (source === 'builtin') {
+    template = campaignTemplates.find((t) => t.id === templateId);
+    doSend();
+  } else {
+    db.get(`SELECT * FROM campaign_templates WHERE id = ?`, [templateId], (err, t) => {
+      template = t;
+      doSend();
+    });
+  }
 });
 
 // Admin - Activity log

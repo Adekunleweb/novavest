@@ -183,6 +183,17 @@ db.serialize(() => {
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`);
 
+  // Saved / custom campaign message templates (admin can store reusable messages)
+  db.run(`CREATE TABLE IF NOT EXISTS campaign_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'Custom',
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    is_custom INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   // Activity log for admin monitoring
   db.run(`CREATE TABLE IF NOT EXISTS activity_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

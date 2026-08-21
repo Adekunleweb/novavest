@@ -15,7 +15,7 @@
     <div class="admin-header">
       <div>
         <h1>Message Center</h1>
-        <div class="sub" style="color:var(--gray);">Broadcast announcements &amp; email all users with the official template</div>
+        <div class="sub" style="color:var(--gray);">Broadcast, message individuals, and use campaign templates</div>
       </div>
       <div class="mc-hero-stat">
         <span class="mc-hero-num"><%= totalUsers %></span>
@@ -23,171 +23,255 @@
       </div>
     </div>
 
-    <!-- Compose broadcast -->
-    <div class="dash-panel">
-      <div class="dash-panel-title">📨 Compose Announcement</div>
-      <p style="color:var(--gray);font-size:14px;margin:0 0 18px;">
-        This message is saved to every user's Announcements inbox and emailed to all
-        <%= totalUsers %> users using the official ApexCrestVest branded template. Users can reply directly from their dashboard.
-      </p>
-      <form id="broadcastForm">
-        <div class="form-row" style="grid-template-columns:2fr 1fr;">
-          <div class="form-group">
-            <label>Subject</label>
-            <input type="text" name="subject" id="bSubject" class="form-control" placeholder="e.g. New Investment Plan Now Available" required maxlength="160">
-          </div>
-          <div class="form-group">
-            <label>Audience</label>
-            <select name="audience" id="bAudience" class="form-control">
-              <option value="all">All Users (<%= totalUsers %>)</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Message</label>
-          <textarea name="body" id="bBody" class="form-control" rows="7" placeholder="Type your announcement here. Plain text — line breaks are preserved in the email." required></textarea>
-          <small style="color:var(--gray);">Tip: Keep it clear and professional. Each paragraph becomes its own block in the email.</small>
-        </div>
-        <div style="display:flex;gap:12px;align-items:center;">
-          <button type="submit" class="btn btn-gold" id="bSend">📨 Send Broadcast &amp; Email All Users</button>
-          <span id="bStatus" style="font-size:14px;color:var(--gray);"></span>
-        </div>
-      </form>
+    <!-- Tabs -->
+    <div class="mc-tabs">
+      <button class="mc-tab active" data-tab="broadcast">📨 Broadcast All</button>
+      <button class="mc-tab" data-tab="individual">✉️ Individual</button>
+      <button class="mc-tab" data-tab="templates">🎯 Templates</button>
     </div>
 
-    <!-- Campaign history -->
+    <!-- TAB: Broadcast -->
+    <div class="mc-pane active" id="pane-broadcast">
+      <div class="dash-panel">
+        <div class="dash-panel-title">📨 Compose Announcement</div>
+        <p style="color:var(--gray);font-size:14px;margin:0 0 18px;">
+          Saved to every user's Announcements inbox and emailed to all <%= totalUsers %> users with the official ApexCrestVest template. Users can reply from their dashboard.
+        </p>
+        <form id="broadcastForm">
+          <div class="form-group"><label>Subject</label><input type="text" id="bSubject" class="form-control" placeholder="e.g. New Investment Plan Now Available" required maxlength="160"></div>
+          <div class="form-group"><label>Message</label><textarea id="bBody" class="form-control" rows="7" placeholder="Type your announcement here. Line breaks are preserved." required></textarea></div>
+          <div style="display:flex;gap:12px;align-items:center;"><button type="submit" class="btn btn-gold" id="bSend">📨 Send to All Users</button><span id="bStatus" style="font-size:14px;color:var(--gray);"></span></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB: Individual -->
+    <div class="mc-pane" id="pane-individual">
+      <div class="dash-panel">
+        <div class="dash-panel-title">✉️ Message an Individual User</div>
+        <p style="color:var(--gray);font-size:14px;margin:0 0 18px;">Select a user and send a personal message — saved to their support chat and emailed to them directly.</p>
+        <div class="form-group"><label>Search user by name or email</label><input type="text" id="userSearch" class="form-control" placeholder="Type a name or email to search…"></div>
+        <div id="userResults" class="mc-user-list"></div>
+        <div id="indSelected" style="display:none;margin:16px 0;padding:12px;background:var(--off-white);border-radius:8px;border:1px solid var(--gray-light);"></div>
+        <form id="indForm" style="display:none;">
+          <div class="form-group"><label>Subject</label><input type="text" id="indSubject" class="form-control" placeholder="Personal message subject" required maxlength="160"></div>
+          <div class="form-group"><label>Message</label><textarea id="indBody" class="form-control" rows="6" placeholder="Your personal message to this user…" required></textarea></div>
+          <div style="display:flex;gap:12px;align-items:center;"><button type="submit" class="btn btn-gold" id="indSend">✉️ Send to User</button><span id="indStatus" style="font-size:14px;color:var(--gray);"></span></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB: Templates -->
+    <div class="mc-pane" id="pane-templates">
+      <div class="dash-panel">
+        <div class="dash-panel-title">🎯 Campaign Templates</div>
+        <p style="color:var(--gray);font-size:14px;margin:0 0 18px;">Pre-written messages to encourage investing, re-engage users, and run time-limited offers. Variables like <code>{{name}}</code> and <code>{{balance}}</code> are auto-filled per user.</p>
+        <div class="mc-tpl-cat-filter" id="tplCats"></div>
+        <div id="tplList" class="mc-tpl-list"><div class="mc-empty"><p style="color:var(--gray);">Loading templates…</p></div></div>
+      </div>
+      <div class="dash-panel">
+        <div class="dash-panel-title">➕ Save Your Own Template</div>
+        <form id="saveTplForm">
+          <div class="form-row" style="grid-template-columns:2fr 1fr;">
+            <div class="form-group"><label>Title</label><input type="text" id="tplTitle" class="form-control" placeholder="e.g. Holiday Promo"></div>
+            <div class="form-group"><label>Category</label><input type="text" id="tplCat" class="form-control" placeholder="e.g. Promotions"></div>
+          </div>
+          <div class="form-group"><label>Subject</label><input type="text" id="tplSubject" class="form-control" placeholder="Email subject — use {{name}} if desired"></div>
+          <div class="form-group"><label>Body</label><textarea id="tplBody" class="form-control" rows="5" placeholder="Message body — use {{name}}, {{balance}} as variables"></textarea></div>
+          <button type="submit" class="btn btn-navy">💾 Save Template</button>
+          <span id="tplSaveStatus" style="font-size:14px;color:var(--gray);margin-left:12px;"></span>
+        </form>
+      </div>
+    </div>
+
+    <!-- Campaign history (shared) -->
     <div class="dash-panel">
       <div class="dash-panel-title">📋 Campaign History</div>
       <% if (campaigns.length === 0) { %>
-        <div class="mc-empty">
-          <div style="font-size:44px;margin-bottom:12px;">📭</div>
-          <p style="font-weight:600;color:var(--navy);">No broadcasts yet</p>
-          <p style="font-size:14px;color:var(--gray);">Your sent announcements will appear here.</p>
-        </div>
+        <div class="mc-empty"><div style="font-size:44px;margin-bottom:12px;">📭</div><p style="font-weight:600;color:var(--navy);">No campaigns yet</p><p style="font-size:14px;color:var(--gray);">Your sent messages will appear here.</p></div>
       <% } else { %>
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Subject</th>
-                <th>Audience</th>
-                <th>Recipients</th>
-                <th>Sent By</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% campaigns.forEach(function(c) { %>
-                <tr>
-                  <td style="font-weight:600;color:var(--navy);"><%= c.subject %></td>
-                  <td><span class="badge-soft"><%= c.audience %></span></td>
-                  <td><%= c.recipient_count %></td>
-                  <td><%= c.sent_by || '—' %></td>
-                  <td style="color:var(--gray);font-size:13px;"><%= new Date(c.created_at).toLocaleString() %></td>
-                  <td><button class="btn btn-navy btn-sm view-replies" data-id="<%= c.id %>" data-subject="<%= c.subject %>">💬 View Replies</button></td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Subject</th><th>Audience</th><th>Recipients</th><th>Sent By</th><th>Date</th><th>Actions</th></tr></thead><tbody>
+          <% campaigns.forEach(function(c) { %>
+            <tr><td style="font-weight:600;color:var(--navy);"><%= c.subject %></td><td><span class="badge-soft"><%= c.audience %></span></td><td><%= c.recipient_count %></td><td><%= c.sent_by || '—' %></td><td style="color:var(--gray);font-size:13px;"><%= new Date(c.created_at).toLocaleString() %></td><td><button class="btn btn-navy btn-sm view-replies" data-id="<%= c.id %>" data-subject="<%= c.subject %>">💬 Replies</button></td></tr>
+          <% }) %>
+        </tbody></table></div>
       <% } %>
     </div>
   </main>
 </div>
 
 <!-- Replies modal -->
-<div class="mc-modal" id="repliesModal">
-  <div class="mc-modal-card">
-    <div class="mc-modal-head">
-      <div>
-        <div class="mc-modal-title">💬 Replies</div>
-        <div class="mc-modal-sub" id="rmSubject"></div>
-      </div>
-      <button class="mc-modal-close" id="rmClose">✕</button>
-    </div>
-    <div class="mc-modal-body" id="rmBody">
-      <div class="mc-empty"><p style="color:var(--gray);">Loading…</p></div>
-    </div>
-  </div>
-</div>
+<div class="mc-modal" id="repliesModal"><div class="mc-modal-card">
+  <div class="mc-modal-head"><div><div class="mc-modal-title">💬 Replies</div><div class="mc-modal-sub" id="rmSubject"></div></div><button class="mc-modal-close" id="rmClose">✕</button></div>
+  <div class="mc-modal-body" id="rmBody"><div class="mc-empty"><p style="color:var(--gray);">Loading…</p></div></div>
+</div></div>
+
+<!-- Template send modal -->
+<div class="mc-modal" id="tplSendModal"><div class="mc-modal-card">
+  <div class="mc-modal-head"><div><div class="mc-modal-title" id="tsTitle">Send Template</div><div class="mc-modal-sub" id="tsSub"></div></div><button class="mc-modal-close" id="tsClose">✕</button></div>
+  <div class="mc-modal-body" id="tsBody"></div>
+</div></div>
 
 <script>
-  // Compose & send
-  const form = document.getElementById('broadcastForm');
-  const status = document.getElementById('bStatus');
-  const sendBtn = document.getElementById('bSend');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const subject = document.getElementById('bSubject').value.trim();
-    const body = document.getElementById('bBody').value.trim();
-    if (!subject || !body) return;
-    if (!confirm('Send this announcement to ALL <%= totalUsers %> users via email and dashboard?')) return;
-    sendBtn.disabled = true;
-    sendBtn.textContent = 'Sending…';
-    status.textContent = '';
-    try {
-      const r = await fetch('/admin/messages/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, body, audience: document.getElementById('bAudience').value })
-      });
-      const data = await r.json();
-      if (data.success) {
-        status.style.color = '#28a745';
-        status.textContent = '✓ Sent to ' + data.recipient_count + ' users.';
-        form.reset();
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        status.style.color = '#e74c3c';
-        status.textContent = '✗ ' + (data.error || 'Failed to send.');
-      }
-    } catch (err) {
-      status.style.color = '#e74c3c';
-      status.textContent = '✗ Network error.';
-    } finally {
-      sendBtn.disabled = false;
-      sendBtn.textContent = '📨 Send Broadcast & Email All Users';
-    }
-  });
+const esc = (s) => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  // Replies modal
-  const modal = document.getElementById('repliesModal');
-  const rmBody = document.getElementById('rmBody');
-  const rmSubject = document.getElementById('rmSubject');
-  document.querySelectorAll('.view-replies').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.id;
-      rmSubject.textContent = btn.dataset.subject;
-      rmBody.innerHTML = '<div class="mc-empty"><p style="color:var(--gray);">Loading…</p></div>';
-      modal.classList.add('open');
-      try {
-        const r = await fetch('/admin/messages/campaign/' + id + '/replies');
-        const data = await r.json();
-        if (!data.replies || data.replies.length === 0) {
-          rmBody.innerHTML = '<div class="mc-empty"><div style="font-size:36px;margin-bottom:8px;">🤷</div><p style="color:var(--gray);">No replies yet for this announcement.</p></div>';
-          return;
-        }
-        rmBody.innerHTML = data.replies.map(function(r) {
-          return '<div class="mc-reply">' +
-            '<div class="mc-reply-head">' +
-              '<span class="mc-reply-name">' + escapeHtml(r.full_name) + '</span>' +
-              '<span class="mc-reply-email">' + escapeHtml(r.email) + '</span>' +
-              '<span class="mc-reply-time">' + new Date(r.created_at).toLocaleString() + '</span>' +
-            '</div>' +
-            '<div class="mc-reply-msg">' + escapeHtml(r.message) + '</div>' +
-            '<a href="/admin/support" class="btn btn-navy btn-sm" style="margin-top:10px;">💬 Reply in Support Chat</a>' +
-          '</div>';
-        }).join('');
-      } catch (e) {
-        rmBody.innerHTML = '<div class="mc-empty"><p style="color:#e74c3c;">Failed to load replies.</p></div>';
-      }
-    });
-  });
-  document.getElementById('rmClose').addEventListener('click', () => modal.classList.remove('open'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+// ===== Tab switching =====
+document.querySelectorAll('.mc-tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.mc-tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.mc-pane').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('pane-' + t.dataset.tab).classList.add('active');
+  if (t.dataset.tab === 'templates') loadTemplates();
+}));
 
-  function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+// ===== Broadcast =====
+document.getElementById('broadcastForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const subject = document.getElementById('bSubject').value.trim();
+  const body = document.getElementById('bBody').value.trim();
+  if (!subject || !body) return;
+  if (!confirm('Send to ALL <%= totalUsers %> users via email and dashboard?')) return;
+  const btn = document.getElementById('bSend'); const st = document.getElementById('bStatus');
+  btn.disabled = true; btn.textContent = 'Sending…'; st.textContent = '';
+  try {
+    const r = await fetch('/admin/messages/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ subject, body, audience:'all' }) });
+    const d = await r.json();
+    if (d.success) { st.style.color = '#28a745'; st.textContent = '✓ Sent to ' + d.recipient_count + ' users. Emails dispatched.'; e.target.reset(); setTimeout(()=>location.reload(),1800); }
+    else { st.style.color = '#e74c3c'; st.textContent = '✗ ' + (d.error||'Failed'); }
+  } catch { st.style.color = '#e74c3c'; st.textContent = '✗ Network error'; }
+  finally { btn.disabled = false; btn.textContent = '📨 Send to All Users'; }
+});
+
+// ===== Individual =====
+let selectedUser = null;
+const us = document.getElementById('userSearch');
+let searchTimer = null;
+us.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadUsers, 300); });
+async function loadUsers() {
+  const q = us.value.trim();
+  const r = await fetch('/admin/messages/users' + (q ? ('?q=' + encodeURIComponent(q)) : ''));
+  const d = await r.json();
+  const box = document.getElementById('userResults');
+  if (!d.users || d.users.length === 0) { box.innerHTML = '<p style="color:var(--gray);padding:12px;">No users found.</p>'; return; }
+  box.innerHTML = d.users.map(u => `<div class="mc-user-item" data-id="${u.id}" data-name="${esc(u.full_name)}" data-email="${esc(u.email)}"><span class="mc-user-name">${esc(u.full_name)}</span><span class="mc-user-email">${esc(u.email)}</span><span class="mc-user-bal">$${Number(u.balance||0).toFixed(2)}</span></div>`).join('');
+  box.querySelectorAll('.mc-user-item').forEach(el => el.addEventListener('click', () => {
+    selectedUser = { id: el.dataset.id, name: el.dataset.name, email: el.dataset.email };
+    document.getElementById('indSelected').style.display = 'block';
+    document.getElementById('indSelected').innerHTML = `✅ Selected: <strong>${esc(selectedUser.name)}</strong> &lt;${esc(selectedUser.email)}&gt; <a href="#" id="indClear" style="color:var(--red);margin-left:8px;">change</a>`;
+    document.getElementById('indForm').style.display = 'block';
+    document.getElementById('indClear').addEventListener('click', (ev) => { ev.preventDefault(); selectedUser = null; document.getElementById('indSelected').style.display='none'; document.getElementById('indForm').style.display='none'; });
+  }));
+}
+loadUsers();
+
+document.getElementById('indForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!selectedUser) return;
+  const subject = document.getElementById('indSubject').value.trim();
+  const body = document.getElementById('indBody').value.trim();
+  const btn = document.getElementById('indSend'); const st = document.getElementById('indStatus');
+  btn.disabled = true; btn.textContent = 'Sending…'; st.textContent = '';
+  try {
+    const r = await fetch('/admin/messages/send-individual', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: selectedUser.id, subject, body }) });
+    const d = await r.json();
+    if (d.success) { st.style.color = '#28a745'; st.textContent = '✓ Sent to ' + esc(d.userName) + ' (' + esc(d.userEmail) + ').'; e.target.reset(); }
+    else { st.style.color = '#e74c3c'; st.textContent = '✗ ' + (d.error||'Failed'); }
+  } catch { st.style.color = '#e74c3c'; st.textContent = '✗ Network error'; }
+  finally { btn.disabled = false; btn.textContent = '✉️ Send to User'; }
+});
+
+// ===== Templates =====
+let allBuiltin = [], allCustom = [];
+async function loadTemplates() {
+  const r = await fetch('/admin/messages/templates'); const d = await r.json();
+  allBuiltin = d.builtin || []; allCustom = d.custom || [];
+  // category filter
+  const cats = [...new Set([...allBuiltin, ...allCustom].map(t => t.category))];
+  const cf = document.getElementById('tplCats');
+  cf.innerHTML = '<button class="mc-cat active" data-cat="all">All</button>' + cats.map(c => `<button class="mc-cat" data-cat="${esc(c)}">${esc(c)}</button>`).join('');
+  cf.querySelectorAll('.mc-cat').forEach(b => b.addEventListener('click', () => { cf.querySelectorAll('.mc-cat').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderTemplates(b.dataset.cat); }));
+  renderTemplates('all');
+}
+function renderTemplates(cat) {
+  const list = [...allCustom.map(t=>({...t, _source:'custom'})), ...allBuiltin.map(t=>({...t, _source:'builtin'}))];
+  const filtered = cat === 'all' ? list : list.filter(t => t.category === cat);
+  const box = document.getElementById('tplList');
+  if (filtered.length === 0) { box.innerHTML = '<div class="mc-empty"><p style="color:var(--gray);">No templates in this category.</p></div>'; return; }
+  box.innerHTML = filtered.map(t => `<div class="mc-tpl-card">
+    <div class="mc-tpl-head"><span class="mc-tpl-cat">${esc(t.category)}</span><span class="mc-tpl-src">${t._source === 'custom' ? 'Custom' : 'Built-in'}</span></div>
+    <div class="mc-tpl-title">${esc(t.title)}</div>
+    <div class="mc-tpl-subject"><strong>Subject:</strong> ${esc(t.subject)}</div>
+    <div class="mc-tpl-body">${esc(t.body).substring(0, 220)}${t.body.length>220?'…':''}</div>
+    <div class="mc-tpl-actions">
+      <button class="btn btn-gold btn-sm use-tpl" data-id="${esc(t.id)}" data-source="${t._source}" data-title="${esc(t.title)}" data-subject="${esc(t.subject)}" data-body="${esc(t.body)}">📤 Use Template</button>
+      ${t._source === 'custom' ? `<button class="btn btn-navy btn-sm del-tpl" data-id="${esc(t.id)}">🗑 Delete</button>` : ''}
+    </div></div>`).join('');
+  box.querySelectorAll('.use-tpl').forEach(b => b.addEventListener('click', () => openTplSend(b.dataset)));
+  box.querySelectorAll('.del-tpl').forEach(b => b.addEventListener('click', async () => { if (!confirm('Delete this custom template?')) return; const r = await fetch('/admin/messages/templates/'+b.dataset.id+'/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' }); const d = await r.json(); if (d.success) loadTemplates(); }));
+}
+
+function openTplSend(ds) {
+  const modal = document.getElementById('tplSendModal');
+  document.getElementById('tsTitle').textContent = 'Send: ' + ds.title;
+  document.getElementById('tsSub').textContent = ds.subject;
+  document.getElementById('tsBody').innerHTML = `
+    <div class="form-group"><label>Send mode</label>
+      <select id="tsMode" class="form-control"><option value="all">All Users (Broadcast)</option><option value="individual">Individual User</option></select></div>
+    <div class="form-group" id="tsUserWrap" style="display:none;"><label>Search & select user</label><input type="text" id="tsUserSearch" class="form-control" placeholder="Name or email…"><div id="tsUserResults" class="mc-user-list"></div><div id="tsSelUser" style="margin-top:8px;color:var(--gray);"></div></div>
+    <div style="margin-top:14px;"><button class="btn btn-gold" id="tsConfirm">📤 Send Now</button><span id="tsStatus" style="margin-left:12px;font-size:14px;color:var(--gray);"></span></div>`;
+  modal.classList.add('open');
+  document.getElementById('tsMode').addEventListener('change', (e) => { document.getElementById('tsUserWrap').style.display = e.target.value === 'individual' ? 'block' : 'none'; });
+  let tsUser = null; let stT = null;
+  const tsSearch = document.getElementById('tsUserSearch');
+  if (tsSearch) {
+    tsSearch.addEventListener('input', () => { clearTimeout(stT); stT = setTimeout(async () => {
+      const q = tsSearch.value.trim(); const r = await fetch('/admin/messages/users'+(q?('?q='+encodeURIComponent(q)):'')); const d = await r.json();
+      const rb = document.getElementById('tsUserResults');
+      if (!d.users || !d.users.length) { rb.innerHTML = '<p style="color:var(--gray);padding:8px;">No users.</p>'; return; }
+      rb.innerHTML = d.users.map(u=>`<div class="mc-user-item" data-id="${u.id}" data-name="${esc(u.full_name)}"><span class="mc-user-name">${esc(u.full_name)}</span><span class="mc-user-email">${esc(u.email)}</span></div>`).join('');
+      rb.querySelectorAll('.mc-user-item').forEach(el => el.addEventListener('click', () => { tsUser = { id: el.dataset.id, name: el.dataset.name }; document.getElementById('tsSelUser').innerHTML = '✅ ' + esc(tsUser.name); }));
+    }, 300); });
+  }
+  document.getElementById('tsConfirm').addEventListener('click', async () => {
+    const mode = document.getElementById('tsMode').value;
+    if (mode === 'individual' && !tsUser) { document.getElementById('tsStatus').textContent = 'Select a user first.'; document.getElementById('tsStatus').style.color = '#e74c3c'; return; }
+    const payload = { templateId: ds.id, source: ds.source, mode };
+    if (mode === 'individual') payload.userId = tsUser.id;
+    const r = await fetch('/admin/messages/templates/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (d.success) { document.getElementById('tsStatus').style.color = '#28a745'; document.getElementById('tsStatus').textContent = '✓ Sent to ' + d.recipient_count + ' user(s).'; setTimeout(()=>{ modal.classList.remove('open'); location.reload(); }, 1500); }
+    else { document.getElementById('tsStatus').style.color = '#e74c3c'; document.getElementById('tsStatus').textContent = '✗ ' + (d.error||'Failed'); }
+  });
+}
+
+// Save custom template
+document.getElementById('saveTplForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = { title: document.getElementById('tplTitle').value.trim(), category: document.getElementById('tplCat').value.trim(), subject: document.getElementById('tplSubject').value.trim(), body: document.getElementById('tplBody').value.trim() };
+  if (!payload.title || !payload.subject || !payload.body) return;
+  const st = document.getElementById('tplSaveStatus'); st.textContent = 'Saving…';
+  const r = await fetch('/admin/messages/templates/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const d = await r.json();
+  if (d.success) { st.style.color = '#28a745'; st.textContent = '✓ Saved.'; e.target.reset(); loadTemplates(); }
+  else { st.style.color = '#e74c3c'; st.textContent = '✗ Failed.'; }
+});
+
+// ===== Replies modal =====
+const rmodal = document.getElementById('repliesModal');
+document.querySelectorAll('.view-replies').forEach(btn => btn.addEventListener('click', async () => {
+  document.getElementById('rmSubject').textContent = btn.dataset.subject;
+  document.getElementById('rmBody').innerHTML = '<div class="mc-empty"><p style="color:var(--gray);">Loading…</p></div>';
+  rmodal.classList.add('open');
+  try {
+    const r = await fetch('/admin/messages/campaign/' + btn.dataset.id + '/replies'); const d = await r.json();
+    if (!d.replies || !d.replies.length) { document.getElementById('rmBody').innerHTML = '<div class="mc-empty"><div style="font-size:36px;">🤷</div><p style="color:var(--gray);">No replies yet.</p></div>'; return; }
+    document.getElementById('rmBody').innerHTML = d.replies.map(r => `<div class="mc-reply"><div class="mc-reply-head"><span class="mc-reply-name">${esc(r.full_name)}</span><span class="mc-reply-email">${esc(r.email)}</span><span class="mc-reply-time">${new Date(r.created_at).toLocaleString()}</span></div><div class="mc-reply-msg">${esc(r.message)}</div><a href="/admin/support" class="btn btn-navy btn-sm" style="margin-top:10px;">💬 Reply in Support</a></div>`).join('');
+  } catch { document.getElementById('rmBody').innerHTML = '<div class="mc-empty"><p style="color:#e74c3c;">Failed.</p></div>'; }
+}));
+document.getElementById('rmClose').addEventListener('click', () => rmodal.classList.remove('open'));
+rmodal.addEventListener('click', e => { if (e.target === rmodal) rmodal.classList.remove('open'); });
+document.getElementById('tsClose').addEventListener('click', () => document.getElementById('tplSendModal').classList.remove('open'));
+document.getElementById('tplSendModal').addEventListener('click', e => { if (e.target === document.getElementById('tplSendModal')) document.getElementById('tplSendModal').classList.remove('open'); });
 </script>
 </body>
 </html>
