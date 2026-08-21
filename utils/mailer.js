@@ -55,20 +55,49 @@ function emailTemplate(content) {
 </html>`;
 }
 
+// Support email address for Reply-To (lets users reply directly to support)
+const replyToEmail = process.env.RESEND_REPLY_TO || 'support@apexcrestvest.com';
+
 // Send email wrapper — silently fails if no API key (so app never crashes)
-async function sendEmail(to, subject, htmlContent) {
+// Options: { fromName, replyTo, tags, isPersonal }
+async function sendEmail(to, subject, htmlContent, opts = {}) {
   try {
     const client = initResend();
     if (!client) {
       console.log(`[MAIL] No RESEND_API_KEY set — skipping email to ${to}: ${subject}`);
       return { skipped: true };
     }
-    const { data, error } = await client.emails.send({
-      from: fromEmail,
+
+    // Build the from address — allow a friendlier/personal sender name per email
+    let from = fromEmail;
+    if (opts.fromName) {
+      const angleStart = fromEmail.indexOf('<');
+      const angleEnd = fromEmail.indexOf('>');
+      const addr = (angleStart >= 0 && angleEnd > angleStart) ? fromEmail.substring(angleStart + 1, angleEnd) : fromEmail;
+      from = `${opts.fromName} <${addr}>`;
+    }
+
+    // Build headers that improve inbox (Primary tab) placement
+    const headers = {
+      'X-Entity-Type': 'email',              // tells Gmail not to render a promotional image card
+      'X-Entity-Ref-ID': 'apexcrestvest-' + Date.now(), // prevents threading/promo grouping
+      'X-Priority': '1',                     // high priority hint
+      'X-Mailer': 'ApexCrestVest Mailer',
+      'Reply-To': opts.replyTo || replyToEmail,
+      'List-Unsubscribe': `<mailto:${replyToEmail}?subject=Unsubscribe>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+    };
+
+    const payload = {
+      from: from,
       to: [to],
       subject: subject,
-      html: emailTemplate(htmlContent)
-    });
+      html: emailTemplate(htmlContent),
+      headers: headers,
+      tags: opts.tags || [{ name: 'app', value: 'apexcrestvest' }]
+    };
+
+    const { data, error } = await client.emails.send(payload);
     if (error) {
       console.error(`[MAIL] Error sending to ${to}:`, error);
       return { error };
@@ -103,7 +132,7 @@ async function notifySignup(user) {
     <div style="text-align:center;margin:30px 0;">
       <a href="${frontendUrl}/login" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Go to Dashboard</a>
     </div>`;
-  return sendEmail(user.email, 'Welcome to ApexCrestVest — Your Investment Journey Begins! 🚀', content);
+  return sendEmail(user.email, 'Welcome to ApexCrestVest — Your Investment Journey Begins! 🚀', content, { fromName: 'ApexCrestVest Team', tags: [{ name: 'type', value: 'welcome' }] });
 }
 
 async function notifyDepositSubmitted(user, deposit) {
@@ -272,7 +301,7 @@ async function notifyChatReply(user, adminMessage) {
     <div style="text-align:center;margin:30px 0;">
       <a href="${frontendUrl}/support" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Open Support Chat</a>
     </div>`;
-  return sendEmail(user.email, 'New Reply from ApexCrestVest Support 💬', content);
+  return sendEmail(user.email, 'New Reply from ApexCrestVest Support 💬', content, { fromName: 'Support at ApexCrestVest', replyTo: replyToEmail, tags: [{ name: 'type', value: 'support' }] });
 }
 
 // Broadcast / official announcement email to all (or a subset of) users
@@ -300,7 +329,7 @@ ${bodyHtml}
     <p style="color:#8892b0;font-size:13px;line-height:1.6;">
       You're receiving this email because you have an ApexCrestVest account. If you'd like to stop receiving announcements, you can update your preferences in your dashboard profile.
     </p>`;
-  return sendEmail(user.email, `${subject} — ApexCrestVest Announcement 📢`, content);
+  return sendEmail(user.email, `${subject} — ApexCrestVest Announcement 📢`, content, { fromName: 'ApexCrestVest Team', tags: [{ name: 'type', value: 'broadcast' }] });
 }
 
 // Alert admins when a user replies to a broadcast
@@ -348,7 +377,7 @@ async function notifyAutoReply(user) {
     <p style="color:#8892b0;font-size:13px;line-height:1.6;">
       This is an automated message. Please don't reply to this email — use the live chat in your dashboard instead.
     </p>`;
-  return sendEmail(user.email, 'We\'ve Received Your Message — ApexCrestVest Support 📨', content);
+  return sendEmail(user.email, 'We\'ve Received Your Message — ApexCrestVest Support 📨', content, { fromName: 'Support at ApexCrestVest', replyTo: replyToEmail, tags: [{ name: 'type', value: 'support' }] });
 }
 
 // Alert ALL admins by email when a user sends a support message
@@ -394,7 +423,7 @@ ${bodyHtml}
     <div style="text-align:center;margin:30px 0;">
       <a href="${frontendUrl}/support" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Open Support Chat to Reply</a>
     </div>`;
-  return sendEmail(user.email, subject + ' — ApexCrestVest ✉️', content);
+  return sendEmail(user.email, subject + ' — ApexCrestVest ✉️', content, { fromName: 'ApexCrestVest Team', replyTo: replyToEmail, tags: [{ name: 'type', value: 'individual' }] });
 }
 
 module.exports = {
