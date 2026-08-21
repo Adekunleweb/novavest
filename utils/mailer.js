@@ -275,6 +275,55 @@ async function notifyChatReply(user, adminMessage) {
   return sendEmail(user.email, 'New Reply from ApexCrestVest Support 💬', content);
 }
 
+// Broadcast / official announcement email to all (or a subset of) users
+async function notifyBroadcast(user, subject, body) {
+  // Convert plain-text body to HTML paragraphs (preserve line breaks)
+  const bodyHtml = String(body)
+    .split(/\r?\n/)
+    .filter((line) => line.trim().length > 0)
+    .map((line) => `      <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">${line}</p>`)
+    .join('\n');
+
+  const content = `
+    <h2 style="margin:0 0 20px;color:#e6f1ff;font-size:22px;">Official Announcement 📢</h2>
+    <p style="color:#d4af37;font-size:13px;letter-spacing:1px;text-transform:uppercase;margin:0 0 20px;">ApexCrestVest</p>
+    <p style="color:#e6f1ff;font-size:18px;font-weight:600;margin:0 0 20px;">${subject}</p>
+    <div style="background:#0a1628;border-radius:10px;padding:20px;margin:25px 0;border-left:3px solid #d4af37;">
+${bodyHtml}
+    </div>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      Hello ${user.full_name}, this is an official message from the ApexCrestVest team. You can view this announcement in your dashboard and reply directly to us if you have any questions.
+    </p>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${frontendUrl}/announcements" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">View in Dashboard &amp; Reply</a>
+    </div>
+    <p style="color:#8892b0;font-size:13px;line-height:1.6;">
+      You're receiving this email because you have an ApexCrestVest account. If you'd like to stop receiving announcements, you can update your preferences in your dashboard profile.
+    </p>`;
+  return sendEmail(user.email, `${subject} — ApexCrestVest Announcement 📢`, content);
+}
+
+// Alert admins when a user replies to a broadcast
+async function notifyBroadcastReplyAlert(adminEmail, userName, userEmail, broadcastSubject, replyMessage) {
+  const content = `
+    <h2 style="margin:0 0 20px;color:#e6f1ff;font-size:22px;">Broadcast Reply Received 💬</h2>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      A user has replied to an announcement broadcast.
+    </p>
+    <div style="background:#0a1628;border-radius:10px;padding:20px;margin:25px 0;border-left:3px solid #d4af37;">
+      <p style="margin:0 0 8px;color:#8892b0;font-size:13px;">Announcement:</p>
+      <p style="margin:0 0 16px;color:#e6f1ff;font-size:15px;font-weight:600;">${broadcastSubject}</p>
+      <p style="margin:0 0 8px;color:#8892b0;font-size:13px;">From:</p>
+      <p style="margin:0 0 16px;color:#e6f1ff;font-size:15px;">${userName} &lt;${userEmail}&gt;</p>
+      <p style="margin:0 0 8px;color:#8892b0;font-size:13px;">Reply:</p>
+      <p style="margin:0;color:#e6f1ff;font-size:15px;line-height:1.7;">"${replyMessage}"</p>
+    </div>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      You can view and respond to this reply in the Message Center inside your admin dashboard.
+    </p>`;
+  return sendEmail(adminEmail, 'Broadcast Reply — ' + broadcastSubject + ' 💬', content);
+}
+
 module.exports = {
   sendEmail,
   notifySignup,
@@ -286,6 +335,8 @@ module.exports = {
   notifyWithdrawalApproved,
   notifyWithdrawalRejected,
   notifyChatReply,
+  notifyBroadcast,
+  notifyBroadcastReplyAlert,
   notifyPasswordReset,
   notifyPasswordChanged
 };

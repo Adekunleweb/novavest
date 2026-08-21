@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active }) %>
+  <main class="admin-main">
+    <div class="admin-header">
+      <div>
+        <h1>Message Center</h1>
+        <div class="sub" style="color:var(--gray);">Broadcast announcements &amp; email all users with the official template</div>
+      </div>
+      <div class="mc-hero-stat">
+        <span class="mc-hero-num"><%= totalUsers %></span>
+        <span class="mc-hero-label">Active Users</span>
+      </div>
+    </div>
+
+    <!-- Compose broadcast -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">📨 Compose Announcement</div>
+      <p style="color:var(--gray);font-size:14px;margin:0 0 18px;">
+        This message is saved to every user's Announcements inbox and emailed to all
+        <%= totalUsers %> users using the official ApexCrestVest branded template. Users can reply directly from their dashboard.
+      </p>
+      <form id="broadcastForm">
+        <div class="form-row" style="grid-template-columns:2fr 1fr;">
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" name="subject" id="bSubject" class="form-control" placeholder="e.g. New Investment Plan Now Available" required maxlength="160">
+          </div>
+          <div class="form-group">
+            <label>Audience</label>
+            <select name="audience" id="bAudience" class="form-control">
+              <option value="all">All Users (<%= totalUsers %>)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea name="body" id="bBody" class="form-control" rows="7" placeholder="Type your announcement here. Plain text — line breaks are preserved in the email." required></textarea>
+          <small style="color:var(--gray);">Tip: Keep it clear and professional. Each paragraph becomes its own block in the email.</small>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <button type="submit" class="btn btn-gold" id="bSend">📨 Send Broadcast &amp; Email All Users</button>
+          <span id="bStatus" style="font-size:14px;color:var(--gray);"></span>
+        </div>
+      </form>
+    </div>
+
+    <!-- Campaign history -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">📋 Campaign History</div>
+      <% if (campaigns.length === 0) { %>
+        <div class="mc-empty">
+          <div style="font-size:44px;margin-bottom:12px;">📭</div>
+          <p style="font-weight:600;color:var(--navy);">No broadcasts yet</p>
+          <p style="font-size:14px;color:var(--gray);">Your sent announcements will appear here.</p>
+        </div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Audience</th>
+                <th>Recipients</th>
+                <th>Sent By</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% campaigns.forEach(function(c) { %>
+                <tr>
+                  <td style="font-weight:600;color:var(--navy);"><%= c.subject %></td>
+                  <td><span class="badge-soft"><%= c.audience %></span></td>
+                  <td><%= c.recipient_count %></td>
+                  <td><%= c.sent_by || '—' %></td>
+                  <td style="color:var(--gray);font-size:13px;"><%= new Date(c.created_at).toLocaleString() %></td>
+                  <td><button class="btn btn-navy btn-sm view-replies" data-id="<%= c.id %>" data-subject="<%= c.subject %>">💬 View Replies</button></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </main>
+</div>
+
+<!-- Replies modal -->
+<div class="mc-modal" id="repliesModal">
+  <div class="mc-modal-card">
+    <div class="mc-modal-head">
+      <div>
+        <div class="mc-modal-title">💬 Replies</div>
+        <div class="mc-modal-sub" id="rmSubject"></div>
+      </div>
+      <button class="mc-modal-close" id="rmClose">✕</button>
+    </div>
+    <div class="mc-modal-body" id="rmBody">
+      <div class="mc-empty"><p style="color:var(--gray);">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Compose & send
+  const form = document.getElementById('broadcastForm');
+  const status = document.getElementById('bStatus');
+  const sendBtn = document.getElementById('bSend');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const subject = document.getElementById('bSubject').value.trim();
+    const body = document.getElementById('bBody').value.trim();
+    if (!subject || !body) return;
+    if (!confirm('Send this announcement to ALL <%= totalUsers %> users via email and dashboard?')) return;
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending…';
+    status.textContent = '';
+    try {
+      const r = await fetch('/admin/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, body, audience: document.getElementById('bAudience').value })
+      });
+      const data = await r.json();
+      if (data.success) {
+        status.style.color = '#28a745';
+        status.textContent = '✓ Sent to ' + data.recipient_count + ' users.';
+        form.reset();
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        status.style.color = '#e74c3c';
+        status.textContent = '✗ ' + (data.error || 'Failed to send.');
+      }
+    } catch (err) {
+      status.style.color = '#e74c3c';
+      status.textContent = '✗ Network error.';
+    } finally {
+      sendBtn.disabled = false;
+      sendBtn.textContent = '📨 Send Broadcast & Email All Users';
+    }
+  });
+
+  // Replies modal
+  const modal = document.getElementById('repliesModal');
+  const rmBody = document.getElementById('rmBody');
+  const rmSubject = document.getElementById('rmSubject');
+  document.querySelectorAll('.view-replies').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      rmSubject.textContent = btn.dataset.subject;
+      rmBody.innerHTML = '<div class="mc-empty"><p style="color:var(--gray);">Loading…</p></div>';
+      modal.classList.add('open');
+      try {
+        const r = await fetch('/admin/messages/campaign/' + id + '/replies');
+        const data = await r.json();
+        if (!data.replies || data.replies.length === 0) {
+          rmBody.innerHTML = '<div class="mc-empty"><div style="font-size:36px;margin-bottom:8px;">🤷</div><p style="color:var(--gray);">No replies yet for this announcement.</p></div>';
+          return;
+        }
+        rmBody.innerHTML = data.replies.map(function(r) {
+          return '<div class="mc-reply">' +
+            '<div class="mc-reply-head">' +
+              '<span class="mc-reply-name">' + escapeHtml(r.full_name) + '</span>' +
+              '<span class="mc-reply-email">' + escapeHtml(r.email) + '</span>' +
+              '<span class="mc-reply-time">' + new Date(r.created_at).toLocaleString() + '</span>' +
+            '</div>' +
+            '<div class="mc-reply-msg">' + escapeHtml(r.message) + '</div>' +
+            '<a href="/admin/support" class="btn btn-navy btn-sm" style="margin-top:10px;">💬 Reply in Support Chat</a>' +
+          '</div>';
+        }).join('');
+      } catch (e) {
+        rmBody.innerHTML = '<div class="mc-empty"><p style="color:#e74c3c;">Failed to load replies.</p></div>';
+      }
+    });
+  });
+  document.getElementById('rmClose').addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+
+  function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+</script>
+</body>
+</html>

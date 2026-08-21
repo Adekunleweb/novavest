@@ -589,6 +589,83 @@ app.get('/support/messages', requireUser, (req, res) => {
   });
 });
 
+// ============ ANNOUNCEMENTS / BROADCASTS (USER) ============
+
+// User-facing announcements page
+app.get('/announcements', requireUser, (req, res) => {
+  const userId = req.session.userId;
+  db.all(`
+    SELECT b.*,
+      (SELECT is_read FROM broadcast_deliveries WHERE broadcast_id = b.id AND user_id = ?) AS is_read,
+      (SELECT COUNT(*) FROM broadcast_replies WHERE broadcast_id = b.id AND user_id = ?) AS my_replies
+    FROM broadcasts b
+    ORDER BY b.created_at DESC
+  `, [userId, userId], (err, broadcasts) => {
+    // Mark all as read for this user
+    (broadcasts || []).forEach((b) => {
+      db.run(`INSERT INTO broadcast_deliveries (broadcast_id, user_id, is_read) VALUES (?, ?, 1)
+              ON CONFLICT(broadcast_id, user_id) DO UPDATE SET is_read = 1`, [b.id, userId]);
+    });
+    db.get(`SELECT * FROM users WHERE id = ?`, [userId], (e, user) => {
+      res.render('announcements', { user, broadcasts: broadcasts || [], active: 'announcements', title: 'Announcements - ApexCrestVest' });
+    });
+  });
+});
+
+// JSON list of broadcasts for the current user (used by JS on the page)
+app.get('/me/broadcasts', requireUser, (req, res) => {
+  const userId = req.session.userId;
+  db.all(`
+    SELECT b.*,
+      (SELECT is_read FROM broadcast_deliveries WHERE broadcast_id = b.id AND user_id = ?) AS is_read
+    FROM broadcasts b
+    ORDER BY b.created_at DESC
+  `, [userId], (err, broadcasts) => {
+    res.json({ broadcasts: broadcasts || [] });
+  });
+});
+
+// User replies to a broadcast — also pushes into the support messages thread
+app.post('/me/broadcasts/:id/reply', requireUser, (req, res) => {
+  const userId = req.session.userId;
+  const broadcastId = req.params.id;
+  const message = (req.body.message || '').toString().trim();
+  if (!message) return res.status(400).json({ success: false, error: 'Message cannot be empty.' });
+
+  db.get(`SELECT * FROM broadcasts WHERE id = ?`, [broadcastId], (err, broadcast) => {
+    if (!broadcast) return res.status(404).json({ success: false, error: 'Announcement not found.' });
+
+    // 1) Save reply to broadcast_replies
+    db.run(`INSERT INTO broadcast_replies (broadcast_id, user_id, message) VALUES (?, ?, ?)`,
+      [broadcastId, userId, message], function () {
+        const replyId = this.lastID;
+
+        // 2) Also push into the existing support messages thread so admin sees it in Support chat
+        const supportMsg = '[Reply to: "' + broadcast.subject + '"] ' + message;
+        db.run(`INSERT INTO messages (user_id, sender, message) VALUES (?, 'user', ?)`,
+          [userId, supportMsg], function () {
+            io.to('admin-room').emit('new_message', {
+              id: this.lastID, user_id: userId, sender: 'user',
+              message: supportMsg, created_at: new Date().toISOString()
+            });
+          });
+
+        // 3) Email the admin(s) a reply alert
+        db.all(`SELECT email FROM admins LIMIT 5`, (e, admins) => {
+          (admins || []).forEach((a) => {
+            db.get(`SELECT * FROM users WHERE id = ?`, [userId], (e2, user) => {
+              if (user && a.email) {
+                mailer.notifyBroadcastReplyAlert(a.email, user.full_name, user.email, broadcast.subject, message);
+              }
+            });
+          });
+        });
+
+        res.json({ success: true, id: replyId });
+      });
+  });
+});
+
 // ============ ADMIN ROUTES ============
 
 app.get('/admin/login', (req, res) => {
@@ -1017,6 +1094,87 @@ app.post('/admin/support/:userId/send', requireAdmin, (req, res) => {
       if (user) mailer.notifyChatReply(user, message);
     });
     res.json({ success: true });
+  });
+});
+
+// Admin - Message Center (broadcast / email all users)
+app.get('/admin/messages', requireAdmin, (req, res) => {
+  // Recent campaigns for the history list
+  db.all(`SELECT * FROM broadcasts ORDER BY created_at DESC LIMIT 50`, (err, campaigns) => {
+    // total active users (non-admin)
+    db.get(`SELECT COUNT(*) AS cnt FROM users WHERE is_admin = 0 OR is_admin IS NULL`, (e2, userCount) => {
+      res.render('admin/messages', {
+        campaigns: campaigns || [],
+        totalUsers: userCount ? userCount.cnt : 0,
+        active: 'messages',
+        adminName: req.session.adminName,
+        title: 'Message Center - ApexCrestVest Admin'
+      });
+    });
+  });
+});
+
+// Admin sends a broadcast to all users (DB + email)
+app.post('/admin/messages/send', requireAdmin, (req, res) => {
+  const { subject, body, audience } = req.body;
+  if (!subject || !body) return res.status(400).json({ success: false, error: 'Subject and message are required.' });
+  const audienceFinal = audience || 'all';
+  const adminName = req.session.adminName || 'Admin';
+
+  // Insert the broadcast
+  db.run(`INSERT INTO broadcasts (subject, body, audience, sent_by) VALUES (?, ?, ?, ?)`,
+    [subject, body, audienceFinal, adminName], function () {
+      const broadcastId = this.lastID;
+
+      // Fetch the audience (all non-admin users)
+      db.all(`SELECT * FROM users WHERE is_admin = 0 OR is_admin IS NULL`, (err, users) => {
+        const recipients = users || [];
+        // Record a delivery row for every recipient
+        recipients.forEach((u) => {
+          db.run(`INSERT OR IGNORE INTO broadcast_deliveries (broadcast_id, user_id, is_read) VALUES (?, ?, 0)`,
+            [broadcastId, u.id]);
+        });
+
+        // Update recipient_count
+        db.run(`UPDATE broadcasts SET recipient_count = ? WHERE id = ?`, [recipients.length, broadcastId]);
+
+        // Email each recipient with the official template (fire-and-forget)
+        recipients.forEach((u) => {
+          mailer.notifyBroadcast(u, subject, body).catch((e) => {
+            console.error('[BROADCAST] email failed for user', u.id, e && e.message);
+          });
+        });
+
+        // Notify admins in real time
+        io.to('admin-room').emit('broadcast_sent', {
+          id: broadcastId, subject, recipient_count: recipients.length, created_at: new Date().toISOString()
+        });
+
+        res.json({ success: true, recipient_count: recipients.length, broadcast_id: broadcastId });
+      });
+    });
+});
+
+// Admin campaign history (JSON)
+app.get('/admin/messages/campaigns', requireAdmin, (req, res) => {
+  db.all(`SELECT b.*,
+            (SELECT COUNT(*) FROM broadcast_replies WHERE broadcast_id = b.id) AS reply_count,
+            (SELECT COUNT(*) FROM broadcast_deliveries WHERE broadcast_id = b.id AND is_read = 1) AS read_count
+          FROM broadcasts b ORDER BY b.created_at DESC LIMIT 100`, (err, campaigns) => {
+    res.json({ campaigns: campaigns || [] });
+  });
+});
+
+// Admin views replies for a specific campaign
+app.get('/admin/messages/campaign/:id/replies', requireAdmin, (req, res) => {
+  const id = req.params.id;
+  db.get(`SELECT * FROM broadcasts WHERE id = ?`, [id], (err, broadcast) => {
+    if (!broadcast) return res.status(404).json({ success: false, error: 'Campaign not found.' });
+    db.all(`SELECT r.*, u.full_name, u.email
+            FROM broadcast_replies r JOIN users u ON r.user_id = u.id
+            WHERE r.broadcast_id = ? ORDER BY r.created_at ASC`, [id], (e2, replies) => {
+      res.json({ broadcast, replies: replies || [] });
+    });
   });
 });
 

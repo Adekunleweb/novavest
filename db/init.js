@@ -148,6 +148,41 @@ db.serialize(() => {
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`);
 
+  // Broadcast campaigns — admin sends messages/emails to all or selected users
+  db.run(`CREATE TABLE IF NOT EXISTS broadcasts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    audience TEXT NOT NULL DEFAULT 'all',
+    recipient_count INTEGER DEFAULT 0,
+    sent_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Per-user broadcast delivery tracking (so each user sees only their broadcasts + can reply)
+  db.run(`CREATE TABLE IF NOT EXISTS broadcast_deliveries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    broadcast_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (broadcast_id) REFERENCES broadcasts(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE(broadcast_id, user_id)
+  )`);
+
+  // User replies to broadcasts — these also flow into the support messages table
+  // so they appear in the admin Support inbox as conversation threads
+  db.run(`CREATE TABLE IF NOT EXISTS broadcast_replies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    broadcast_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (broadcast_id) REFERENCES broadcasts(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )`);
+
   // Activity log for admin monitoring
   db.run(`CREATE TABLE IF NOT EXISTS activity_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

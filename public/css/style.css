@@ -516,3 +516,75 @@ footer { background: var(--navy); color: #8a9bb0; padding: 60px 0 24px; }
   .table { font-size: 13px; }
   .dash-header h1 { font-size: 22px; }
 }
+
+/* ============ MESSAGE CENTER (ADMIN) ============ */
+.mc-hero-stat {
+  display: flex; flex-direction: column; align-items: flex-end;
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  padding: 14px 22px; border-radius: var(--radius); color: #fff;
+  border-left: 3px solid var(--gold);
+}
+.mc-hero-num { font-size: 26px; font-weight: 800; color: var(--gold); line-height: 1; }
+.mc-hero-label { font-size: 12px; color: var(--gray); margin-top: 4px; letter-spacing: .5px; text-transform: uppercase; }
+
+.mc-empty { text-align: center; padding: 40px 20px; }
+.badge-soft {
+  display: inline-block; background: rgba(212,175,55,.12); color: var(--gold-dark);
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  text-transform: capitalize;
+}
+.table-wrap { overflow-x: auto; }
+
+/* Modal */
+.mc-modal { display: none; position: fixed; inset: 0; background: rgba(10,22,40,.6); z-index: 1000;
+  align-items: center; justify-content: center; padding: 20px; }
+.mc-modal.open { display: flex; }
+.mc-modal-card { background: #fff; border-radius: 16px; max-width: 640px; width: 100%;
+  max-height: 85vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
+.mc-modal-head { display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px; border-bottom: 1px solid var(--gray-light); }
+.mc-modal-title { font-size: 18px; font-weight: 700; color: var(--navy); }
+.mc-modal-sub { font-size: 13px; color: var(--gray); margin-top: 2px; }
+.mc-modal-close { background: none; border: none; font-size: 20px; color: var(--gray);
+  cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+.mc-modal-close:hover { background: var(--gray-light); color: var(--navy); }
+.mc-modal-body { padding: 20px 24px; overflow-y: auto; }
+
+.mc-reply { background: var(--off-white); border: 1px solid var(--gray-light);
+  border-left: 3px solid var(--gold); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+.mc-reply-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; }
+.mc-reply-name { font-weight: 700; color: var(--navy); font-size: 14px; }
+.mc-reply-email { font-size: 13px; color: var(--gold-dark); }
+.mc-reply-time { font-size: 12px; color: var(--gray); margin-left: auto; }
+.mc-reply-msg { color: var(--navy); font-size: 14px; line-height: 1.6; white-space: pre-wrap;
+  background: #fff; padding: 12px; border-radius: 8px; border: 1px solid var(--gray-light); }
+
+/* ============ ANNOUNCEMENTS (USER) ============ */
+.an-empty { text-align: center; padding: 60px 20px; }
+.an-card { background: #fff; border-radius: 14px; box-shadow: var(--shadow);
+  margin-bottom: 22px; overflow: hidden; border: 1px solid var(--gray-light); }
+.an-card-head { display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  border-bottom: 3px solid var(--gold); }
+.an-badge { color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.an-date { color: var(--gray); font-size: 13px; }
+.an-subject { font-size: 22px; font-weight: 700; color: var(--navy); padding: 20px 22px 4px; }
+.an-body { padding: 6px 22px 18px; }
+.an-body p { color: #475569; font-size: 15px; line-height: 1.75; margin-bottom: 12px; }
+.an-body p:last-child { margin-bottom: 0; }
+
+.an-reply-section { padding: 0 22px 22px; border-top: 1px solid var(--gray-light); padding-top: 18px; }
+.an-reply-box { margin-top: 14px; }
+.an-prev-replies { margin-bottom: 14px; }
+.an-prev-item { background: var(--off-white); border: 1px solid var(--gray-light);
+  border-left: 3px solid var(--green); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+.an-prev-label { font-size: 12px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: .5px; }
+.an-prev-item p { color: var(--navy); font-size: 14px; line-height: 1.6; margin: 6px 0; white-space: pre-wrap; }
+.an-prev-time { font-size: 12px; color: var(--gray); }
+.an-reply-status { font-size: 13px; }
+
+@media (max-width: 768px) {
+  .mc-hero-stat { display: none; }
+  .an-subject { font-size: 18px; }
+  .mc-reply-time { margin-left: 0; }
+}

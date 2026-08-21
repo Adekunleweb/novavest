@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dash-layout">
+  <%- include('partials/dash-sidebar', { active }) %>
+  <main class="dash-main">
+    <div class="dash-header">
+      <div>
+        <h1>Announcements</h1>
+        <div class="sub">Official messages from ApexCrestVest — you can reply to any announcement below</div>
+      </div>
+    </div>
+
+    <% if (broadcasts.length === 0) { %>
+      <div class="dash-panel">
+        <div class="an-empty">
+          <div style="font-size:52px;margin-bottom:14px;">📢</div>
+          <p style="font-size:18px;font-weight:700;color:var(--navy);">No announcements yet</p>
+          <p style="color:var(--gray);font-size:14px;margin-top:6px;">When the ApexCrestVest team posts an official announcement, it will appear here and you'll receive it by email.</p>
+        </div>
+      </div>
+    <% } else { %>
+      <% broadcasts.forEach(function(b, i) { %>
+        <div class="an-card" id="an-<%= b.id %>">
+          <div class="an-card-head">
+            <div class="an-badge">📢 Official Announcement</div>
+            <div class="an-date"><%= new Date(b.created_at).toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' }) %></div>
+          </div>
+          <h2 class="an-subject"><%= b.subject %></h2>
+          <div class="an-body">
+            <% b.body.split(/\r?\n/).forEach(function(line) { %>
+              <% if (line.trim().length) { %><p><%= line %></p><% } %>
+            <% }) %>
+          </div>
+
+          <div class="an-reply-section">
+            <button class="btn btn-gold btn-sm toggle-reply" data-id="<%= b.id %>">
+              <% if (b.my_replies > 0) { %>💬 You replied — View / Reply Again<% } else { %>💬 Reply to this announcement<% } %>
+            </button>
+            <div class="an-reply-box" id="reply-box-<%= b.id %>" style="display:none;">
+              <div class="an-prev-replies" id="prev-<%= b.id %>"></div>
+              <textarea class="form-control" id="reply-text-<%= b.id %>" rows="3" placeholder="Write your reply to the ApexCrestVest team…"></textarea>
+              <div style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+                <button class="btn btn-gold btn-sm send-reply" data-id="<%= b.id %>">Send Reply</button>
+                <span class="an-reply-status" id="status-<%= b.id %>"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    <% } %>
+  </main>
+</div>
+
+<script>
+  // Toggle reply box
+  document.querySelectorAll('.toggle-reply').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const box = document.getElementById('reply-box-' + id);
+      const visible = box.style.display !== 'none';
+      box.style.display = visible ? 'none' : 'block';
+      if (!visible) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+
+  // Send reply
+  document.querySelectorAll('.send-reply').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const text = document.getElementById('reply-text-' + id).value.trim();
+      const status = document.getElementById('status-' + id);
+      if (!text) { status.textContent = 'Please write a message first.'; status.style.color = '#e74c3c'; return; }
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        const r = await fetch('/me/broadcasts/' + id + '/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await r.json();
+        if (data.success) {
+          status.style.color = '#28a745';
+          status.textContent = '✓ Reply sent! Our team has been notified.';
+          document.getElementById('reply-text-' + id).value = '';
+          // Show the reply inline
+          const prev = document.getElementById('prev-' + id);
+          const div = document.createElement('div');
+          div.className = 'an-prev-item';
+          div.innerHTML = '<span class="an-prev-label">You replied:</span><p>' + escapeHtml(text) + '</p><span class="an-prev-time">' + new Date().toLocaleString() + '</span>';
+          prev.prepend(div);
+        } else {
+          status.style.color = '#e74c3c';
+          status.textContent = '✗ ' + (data.error || 'Failed to send.');
+        }
+      } catch (e) {
+        status.style.color = '#e74c3c';
+        status.textContent = '✗ Network error.';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Send Reply';
+      }
+    });
+  });
+
+  function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+</script>
+</body>
+</html>
