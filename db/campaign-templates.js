@@ -222,7 +222,7 @@ Open the Invest page and lock in Premium access at starter pricing before the 3 
     id: 'engage_we_miss_you',
     category: 'Re-Engagement',
     title: 'We Miss You — Come Back to Earn',
-    subject: 'We miss you, {{name} } — your account is still active 🤝',
+    subject: 'We miss you, {{name}} — your account is still active 🤝',
     body: `Hello {{name}},
 
 We noticed it's been a little while since you last logged in — and we wanted to reach out personally.
@@ -240,7 +240,7 @@ We'd love to see you earning again.`,
     id: 'engage_referral_earn',
     category: 'Re-Engagement',
     title: 'Earn $700 Per Friend You Refer',
-    subject: 'Turn your friends into earnings, {{name} } 🎉',
+    subject: 'Turn your friends into earnings, {{name}} 🎉',
     body: `Hello {{name}},
 
 Did you know you can earn $700 for every friend you refer to ApexCrestVest?

@@ -1126,14 +1126,22 @@ app.post('/admin/support/:userId/send', requireAdmin, (req, res) => {
 app.get('/admin/messages', requireAdmin, (req, res) => {
   // Recent campaigns for the history list
   db.all(`SELECT * FROM broadcasts ORDER BY created_at DESC LIMIT 50`, (err, campaigns) => {
-    // total active users (non-admin)
-    db.get(`SELECT COUNT(*) AS cnt FROM users WHERE is_admin = 0 OR is_admin IS NULL`, (e2, userCount) => {
-      res.render('admin/messages', {
-        campaigns: campaigns || [],
-        totalUsers: userCount ? userCount.cnt : 0,
-        active: 'messages',
-        adminName: req.session.adminName,
-        title: 'Message Center - ApexCrestVest Admin'
+    // total active users (non-admin) + full user list for the dropdown
+    db.all(`SELECT id, full_name, email, balance, country FROM users WHERE is_admin = 0 OR is_admin IS NULL ORDER BY full_name ASC`, (e1, users) => {
+      db.get(`SELECT COUNT(*) AS cnt FROM users WHERE is_admin = 0 OR is_admin IS NULL`, (e2, userCount) => {
+        // custom templates from DB (built-in ones come from the module)
+        db.all(`SELECT * FROM campaign_templates ORDER BY created_at DESC`, (e3, customTemplates) => {
+          res.render('admin/messages', {
+            campaigns: campaigns || [],
+            users: users || [],
+            totalUsers: userCount ? userCount.cnt : 0,
+            templates: campaignTemplates,
+            customTemplates: customTemplates || [],
+            active: 'messages',
+            adminName: req.session.adminName,
+            title: 'Message Center - ApexCrestVest Admin'
+          });
+        });
       });
     });
   });
