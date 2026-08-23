@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/3d-enhancements.css">
 </head>
 <body>
 <div class="dash-layout">
@@ -43,6 +44,14 @@
         <div class="stat-icon purple">🎯</div>
         <div class="stat-val"><%= investments.filter(i => i.status === 'active').length %></div>
         <div class="stat-lbl">Active Investments</div>
+      </div>
+    </div>
+
+    <!-- 3D Portfolio Growth Chart -->
+    <div class="dash-panel" style="padding:24px; margin-bottom:24px;" id="apex3d-growth">
+      <div class="dash-panel-title">Portfolio Growth &mdash; Last 12 Months <span style="float:right; font-size:12px; color:var(--gray); font-weight:400;">Drag to rotate</span></div>
+      <div class="apex3d-growth-canvas-wrap" style="height:320px; box-shadow:none;">
+        <canvas id="growth-canvas"></canvas>
       </div>
     </div>
 
@@ -139,5 +148,8 @@
     </div>
   </main>
 </div>
+<!-- 3D Enhancements -->
+<script src="/js/three-d.js"></script>
+<script src="/js/apex-3d.js"></script>
 </body>
 </html>

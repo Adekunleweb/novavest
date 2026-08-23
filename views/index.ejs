@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/3d-enhancements.css">
 </head>
 <body>
 
@@ -60,26 +61,46 @@
           </div>
         </div>
       </div>
-      <div class="hero-visual">
-        <div class="hero-card">
-          <div class="hero-card-title">Portfolio Value</div>
-          <div class="hero-card-amount">$48,350.00</div>
-          <div class="hero-chart"></div>
-          <div class="hero-card-row">
-            <span class="lbl">Active Plan</span>
-            <span class="val">Professional</span>
-          </div>
-          <div class="hero-card-row">
-            <span class="lbl">ROI Rate</span>
-            <span class="val" style="color:var(--green)">+60.0%</span>
-          </div>
-          <div class="hero-card-row">
-            <span class="lbl">Next Payout</span>
-            <span class="val">In 5 days</span>
-          </div>
-          <div class="hero-card-row">
-            <span class="lbl">Total Earned</span>
-            <span class="val" style="color:var(--gold)">$18,200.00</span>
+      <div class="hero-visual apex3d-hero-visual">
+        <canvas id="hero-canvas"></canvas>
+        <div class="apex3d-dash-wrap">
+          <div class="apex3d-dash-panel" id="apex3d-dash">
+            <div class="dash-title">Portfolio Value</div>
+            <div class="dash-amount">$<span id="apex3d-balance" data-amount="48350.00" data-decimals="2">48,350.00</span></div>
+            <div class="dash-chart">
+              <svg viewBox="0 0 300 90" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="apex3dgrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(212,175,55,0.5)"/>
+                    <stop offset="100%" stop-color="rgba(212,175,55,0)"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,75 L40,62 L80,68 L120,45 L160,50 L200,28 L240,35 L300,12 L300,90 L0,90 Z" fill="url(#apex3dgrad)"/>
+                <path d="M0,75 L40,62 L80,68 L120,45 L160,50 L200,28 L240,35 L300,12" fill="none" stroke="#f0c75e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="dash-tiles">
+              <div class="dash-tile">
+                <div class="t-val gold" data-count="60" data-suffix="%">0%</div>
+                <div class="t-lbl">ROI Rate</div>
+              </div>
+              <div class="dash-tile">
+                <div class="t-val green">+18.2K</div>
+                <div class="t-lbl">Earned</div>
+              </div>
+              <div class="dash-tile">
+                <div class="t-val">5d</div>
+                <div class="t-lbl">Next Payout</div>
+              </div>
+            </div>
+            <div class="dash-row">
+              <span class="lbl">Active Plan</span>
+              <span class="val">Professional</span>
+            </div>
+            <div class="dash-row">
+              <span class="lbl">Total Earned</span>
+              <span class="val" style="color:var(--gold)">$18,200.00</span>
+            </div>
           </div>
         </div>
       </div>
@@ -114,6 +135,41 @@
           <a href="/signup" class="btn btn-gold btn-block">Invest Now</a>
         </div>
       <% }) %>
+    </div>
+  </div>
+</section>
+
+<!-- 3D Growth Chart -->
+<section class="apex3d-growth-section" id="apex3d-growth">
+  <div class="container">
+    <div class="growth-grid">
+      <div class="growth-text apex3d-reveal">
+        <span class="sub">Performance Analytics</span>
+        <h2>Watch Your Wealth Grow in Real Time</h2>
+        <p>Our AI-driven trading engine delivers consistent, compounding returns. This interactive 3D chart visualizes 12 months of portfolio growth &mdash; drag to rotate and explore your earning potential.</p>
+        <div class="growth-stats">
+          <div class="growth-stat">
+            <div class="num apex3d-stat"><span data-count="240" data-prefix="$" data-suffix="M+">$0M+</span></div>
+            <div class="label">Assets Managed</div>
+          </div>
+          <div class="growth-stat">
+            <div class="num apex3d-stat"><span data-count="99" data-suffix=".8%">0%</span></div>
+            <div class="label">Payout Success</div>
+          </div>
+          <div class="growth-stat">
+            <div class="num apex3d-stat"><span data-count="25" data-suffix="%">0%</span></div>
+            <div class="label">Avg. ROI / 7 Days</div>
+          </div>
+        </div>
+      </div>
+      <div class="apex3d-reveal">
+        <div class="apex3d-growth-canvas-wrap">
+          <canvas id="growth-canvas"></canvas>
+          <div class="growth-month-labels">
+            <span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span><span>Nov</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -188,6 +244,33 @@
         <div class="step-num">4</div>
         <h3>Earn & Withdraw</h3>
         <p>Watch your investment grow and withdraw your profits after plan maturity.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3D Globe -->
+<section class="apex3d-globe-section">
+  <div class="container">
+    <div class="globe-grid">
+      <div class="apex3d-globe-canvas-wrap apex3d-reveal">
+        <canvas id="globe-canvas"></canvas>
+      </div>
+      <div class="globe-text apex3d-reveal">
+        <span class="sub">Global Reach</span>
+        <h2>Trusted by Investors in 195+ Countries</h2>
+        <p>From New York to Tokyo, ApexCrestVest connects a worldwide community of smart investors. Spin the globe to explore our active hubs &mdash; every glowing point represents a region where investors are growing their wealth with us.</p>
+        <div class="globe-hubs">
+          <span class="globe-hub">New York</span>
+          <span class="globe-hub">London</span>
+          <span class="globe-hub">Dubai</span>
+          <span class="globe-hub">Singapore</span>
+          <span class="globe-hub">Tokyo</span>
+          <span class="globe-hub">Sydney</span>
+          <span class="globe-hub">Hong Kong</span>
+          <span class="globe-hub">+8 more</span>
+        </div>
+        <a href="/signup" class="btn btn-gold">Join the Global Community &rarr;</a>
       </div>
     </div>
   </div>
@@ -306,6 +389,10 @@
     </div>
   </div>
 </footer>
+
+<!-- 3D Enhancements -->
+<script src="/js/three-d.js"></script>
+<script src="/js/apex-3d.js"></script>
 
 </body>
 </html>

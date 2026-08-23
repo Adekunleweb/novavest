@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/3d-enhancements.css">
 </head>
 <body>
 <nav class="navbar">
@@ -37,7 +38,7 @@
     </div>
     <div class="plans-grid">
       <% plans.forEach(function(p, i) { %>
-        <div class="plan-card <%= i === 1 ? 'featured' : '' %>">
+        <div class="plan-card <%= i === 1 ? 'featured' : '' %>" data-apex3d-tilt>
           <% if (p.badge) { %><div class="plan-badge"><%= p.badge %></div><% } %>
           <div class="plan-name"><%= p.name %></div>
           <div class="plan-min">Minimum deposit: $<%= p.min_deposit.toLocaleString() %></div>
@@ -70,5 +71,8 @@
     <div class="footer-bottom" style="border:none;">© 2024 ApexCrestVest. All rights reserved.</div>
   </div>
 </footer>
+<!-- 3D Enhancements -->
+<script src="/js/three-d.js"></script>
+<script src="/js/apex-3d.js"></script>
 </body>
 </html>
