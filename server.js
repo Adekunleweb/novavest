@@ -105,7 +105,7 @@ app.post('/signup', (req, res) => {
       // Generate a unique referral code for this new user
       const referralCode = 'NV' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
       
-      db.run(`INSERT INTO users (full_name, email, phone, password, country, address, national_id, id_type, balance, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1000, ?, ?)`,
+      db.run(`INSERT INTO users (full_name, email, phone, password, country, address, national_id, id_type, balance, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 250, ?, ?)`,
         [full_name, email, phone, hash, countryData ? countryData.name : country, address, national_id, idType, referralCode, ref || null],
         function(err) {
           if (err) {
@@ -117,8 +117,8 @@ app.post('/signup', (req, res) => {
           logActivity(userId, 'signup', `New user registered: ${full_name} (${email})`, req.ip);
           mailer.notifySignup({ full_name, email, country: countryData ? countryData.name : country });
 
-          // Add $1,000 Sign Up Bonus transaction
-          db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'bonus', 1000, 'Sign Up Bonus', 'completed', ?)`, [userId, generateTxHash('bonus')]);
+          // Add $250 Sign Up Bonus transaction
+          db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'bonus', 250, 'Sign Up Bonus', 'completed', ?)`, [userId, generateTxHash('bonus')]);
 
           // If referred by someone, give referrer $700 bonus and log referral transaction
           if (ref) {
@@ -575,12 +575,19 @@ app.get('/support', requireUser, (req, res) => {
 app.post('/support/send', requireUser, (req, res) => {
   const userId = req.session.userId;
   const { message } = req.body;
+
+  // Was there any user message in this thread BEFORE this one?
+  db.get(`SELECT id FROM messages WHERE user_id = ? AND sender = 'user' LIMIT 1`, [userId], (e, priorUserMsg) => {
+    const isFirstMessage = !priorUserMsg; // auto-reply only on the user's very first message
+
   db.run(`INSERT INTO messages (user_id, sender, message) VALUES (?, 'user', ?)`, [userId, message], function() {
     const msgId = this.lastID;
     io.to('admin-room').emit('new_message', { id: msgId, user_id: userId, sender: 'user', message, created_at: new Date().toISOString() });
-    res.json({ success: true, autoReply: 'A representative will be with you shortly.' });
+    res.json({ success: true, autoReply: isFirstMessage ? 'A representative will be with you shortly.' : null });
 
-    // --- Auto-reply: save an admin message in the thread + email the user ---
+    if (!isFirstMessage) return; // no auto-reply / auto-reply email for follow-up messages
+
+    // --- Auto-reply (first message only): save an admin message in the thread + email the user ---
     db.get(`SELECT * FROM users WHERE id = ?`, [userId], (e, user) => {
       if (user) {
         const autoText = 'Thanks for reaching out! A representative will be with you shortly. In the meantime, feel free to share any additional details about your request.';
@@ -591,18 +598,23 @@ app.post('/support/send', requireUser, (req, res) => {
         });
         // Email the user an auto-reply confirmation
         mailer.notifyAutoReply(user).catch((err) => console.error('[AUTOREPLY] email failed:', err && err.message));
+      }
+    });
 
-        // --- Notify ALL admins by email about this new support ticket ---
-        db.all(`SELECT email FROM admins`, (e2, admins) => {
+    // --- Notify ALL admins by email about this new support ticket (any message) ---
+    db.get(`SELECT * FROM users WHERE id = ?`, [userId], (e2, user2) => {
+      if (user2) {
+        db.all(`SELECT email FROM admins`, (e3, admins) => {
           (admins || []).forEach((a) => {
             if (a && a.email) {
-              mailer.notifySupportTicketAlert(a.email, user.full_name, user.email, message)
+              mailer.notifySupportTicketAlert(a.email, user2.full_name, user2.email, message)
                 .catch((err) => console.error('[TICKET ALERT] email failed:', err && err.message));
             }
           });
         });
       }
     });
+  });
   });
 });
 
@@ -1099,6 +1111,18 @@ app.get('/admin/support', requireAdmin, (req, res) => {
   });
 });
 
+// JSON list of support conversations (used for in-place refresh without page reload)
+app.get('/admin/support/users/list', requireAdmin, (req, res) => {
+  db.all(`SELECT u.id, u.full_name, u.email, 
+          (SELECT message FROM messages WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as last_message,
+          (SELECT created_at FROM messages WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as last_time,
+          (SELECT COUNT(*) FROM messages WHERE user_id = u.id AND sender = 'user' AND read_status = 0) as unread
+          FROM users u WHERE u.is_admin = 0 AND EXISTS (SELECT 1 FROM messages WHERE user_id = u.id)
+          ORDER BY last_time DESC`, (err, users) => {
+    res.json({ users: users || [] });
+  });
+});
+
 app.get('/admin/support/:userId/messages', requireAdmin, (req, res) => {
   const userId = req.params.userId;
   db.all(`SELECT * FROM messages WHERE user_id = ? ORDER BY created_at ASC`, [userId], (err, messages) => {
@@ -1361,6 +1385,36 @@ io.on('connection', (socket) => {
   // Admin opens specific user chat
   socket.on('admin_open_chat', (userId) => {
     socket.join('admin-chat-' + userId);
+  });
+
+  // ===== TYPING INDICATORS =====
+  const parseUserId = (data) => {
+    const id = parseInt(data && data.user_id, 10);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  };
+
+  // User is typing -> notify all admins (shown next to that user)
+  socket.on('user_typing', (data) => {
+    const userId = parseUserId(data);
+    if (!userId) return;
+    io.to('admin-room').emit('show_user_typing', { user_id: userId });
+  });
+  socket.on('user_stop_typing', (data) => {
+    const userId = parseUserId(data);
+    if (!userId) return;
+    io.to('admin-room').emit('hide_user_typing', { user_id: userId });
+  });
+
+  // Admin is typing -> notify that specific user
+  socket.on('admin_typing', (data) => {
+    const userId = parseUserId(data);
+    if (!userId) return;
+    io.to('user-room-' + userId).emit('show_admin_typing', {});
+  });
+  socket.on('admin_stop_typing', (data) => {
+    const userId = parseUserId(data);
+    if (!userId) return;
+    io.to('user-room-' + userId).emit('hide_admin_typing', {});
   });
 });
 

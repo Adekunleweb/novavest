@@ -9,17 +9,17 @@ module.exports = [
     id: 'newbie_welcome',
     category: 'New Investors',
     title: 'Welcome Bonus — Start Investing Today',
-    subject: 'Your $1,000 sign-up bonus is waiting, {{name}} 🎁',
+    subject: 'Your $250 sign-up bonus is waiting, {{name}} 🎁',
     body: `Hello {{name}},
 
 Welcome to ApexCrestVest! We're thrilled to have you on board.
 
-When you signed up, we credited your account with a $1,000 welcome bonus — and it's ready to work for you right now. Our investment plans have helped thousands of members grow their wealth safely and consistently, and your bonus is the perfect way to begin without risking your own money.
+When you signed up, we credited your account with a $250 welcome bonus — and it's ready to work for you right now. Our investment plans have helped thousands of members grow their wealth safely and consistently, and your bonus is the perfect way to begin without risking your own money.
 
 Here's how to start in under 2 minutes:
 1. Visit the Invest page in your dashboard.
 2. Choose a plan that fits your goals.
-3. Use your $1,000 bonus to activate it — no deposit required to begin.
+3. Use your $250 bonus to activate it — no deposit required to begin.
 
 Our most popular starter plan returns up to 25% ROI in just 7 days. That could turn your bonus into real, withdrawable profit before the week is over.
 
@@ -63,7 +63,7 @@ Here are three reasons thousands of members trust ApexCrestVest:
 
 2. Your Money Stays Yours — You can withdraw your capital and profits at any time. We never lock your funds beyond the plan duration, and withdrawals are processed quickly.
 
-3. Start With What You Have — You don't need a fortune to begin. Plans start at $100, and your $1,000 sign-up bonus means you can start earning without spending a cent of your own money.
+3. Start With What You Have — You don't need a fortune to begin. Plans start at $100, and your $250 sign-up bonus means you can start earning without spending a cent of your own money.
 
 The members who act are the ones who earn. The ones who wait, watch from the sidelines.
 
@@ -182,7 +182,7 @@ Open the Invest page now and take advantage of the reduced minimums before they'
 
 Here's an offer you don't want to miss.
 
-For the next 48 hours, any member who activates an investment plan will receive a DOUBLE sign-up bonus credited to their account — that's an extra $1,000 on top of your existing bonus, ready to earn.
+For the next 48 hours, any member who activates an investment plan will receive a DOUBLE sign-up bonus credited to their account — that's an extra $250 on top of your existing bonus, ready to earn.
 
 That means more capital working for you, more returns, and more profit — at no extra cost to you.
 

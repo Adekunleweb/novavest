@@ -7,6 +7,81 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ===== Collapsible chat history ===== */
+    .chat-history-block { margin-bottom: 4px; }
+    .chat-history-inner {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+    .chat-history-inner.expanded { max-height: 1500px; }
+    .chat-collapse-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      color: var(--gold);
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      margin-bottom: 14px;
+    }
+    .chat-collapse-toggle:hover {
+      background: rgba(212, 175, 55, 0.16);
+      border-color: rgba(212, 175, 55, 0.45);
+    }
+    .chat-collapse-toggle .toggle-arrow {
+      display: inline-block;
+      transition: transform 0.3s ease;
+      font-size: 10px;
+    }
+    .chat-collapse-toggle.expanded .toggle-arrow { transform: rotate(180deg); }
+
+    /* ===== Typing indicator ===== */
+    .typing-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px 4px 2px;
+      font-size: 12.5px;
+      color: var(--gray);
+    }
+    .typing-indicator.visible { display: flex; }
+    .typing-indicator .ti-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .typing-dots { display: inline-flex; gap: 4px; }
+    .typing-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--gray);
+      animation: typingBounce 1.2s infinite ease-in-out;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+  </style>
 </head>
 <body>
 <div class="dash-layout">
@@ -34,12 +109,40 @@
             <p style="font-size:14px; margin-top:8px;">Send a message below and our team will assist you right away.</p>
           </div>
         <% } else { %>
-          <% messages.forEach(function(m) { %>
-            <div class="chat-msg <%= m.sender === 'user' ? 'user' : 'admin' %>">
-              <div class="cm-bubble"><%= m.message %></div>
-              <div class="cm-time"><%= new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) %></div>
+          <%
+            const hiddenCount = messages.length - 3;
+            const hiddenMessages = hiddenCount > 0 ? messages.slice(0, hiddenCount) : [];
+            const recentMessages = messages.slice(-3);
+          %>
+          <% if (hiddenMessages.length > 0) { %>
+            <div class="chat-history-block" id="chatHistoryBlock">
+              <div class="chat-history-inner" id="chatHistoryInner">
+                <% hiddenMessages.forEach(function(m) { %>
+                  <div class="chat-msg <%= m.sender === 'user' ? 'user' : 'admin' %>">
+                    <div class="cm-bubble"><%= m.message %></div>
+                    <div class="cm-time"><%= new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) %></div>
+                  </div>
+                <% }) %>
+              </div>
+              <button type="button" class="chat-collapse-toggle" id="chatCollapseToggle" onclick="toggleHistory()">
+                <span class="toggle-arrow">▼</span>
+                <span id="chatCollapseLabel">Show <%= hiddenCount %> previous message<%= hiddenCount === 1 ? '' : 's' %></span>
+              </button>
             </div>
-          <% }) %>
+          <% } %>
+          <div class="recent-messages" id="recentMessages">
+            <% recentMessages.forEach(function(m) { %>
+              <div class="chat-msg <%= m.sender === 'user' ? 'user' : 'admin' %>">
+                <div class="cm-bubble"><%= m.message %></div>
+                <div class="cm-time"><%= new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) %></div>
+              </div>
+            <% }) %>
+            <div class="typing-indicator" id="typingIndicator">
+              <div class="ti-avatar">S</div>
+              <span>Support is typing</span>
+              <div class="typing-dots"><span></span><span></span><span></span></div>
+            </div>
+          </div>
         <% } %>
       </div>
       <div class="chat-input">
@@ -53,35 +156,172 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const userId = <%= user.id %>;
+const COLLAPSE_COUNT = 3; // messages kept visible by default
+let historyCollapsed = true; // start collapsed
+
 const socket = io();
 
 socket.on('connect', () => {
   socket.emit('join_user', userId);
 });
 
+// ===== Real-time admin messages =====
 socket.on('admin_message', (data) => {
+  hideTyping();
   addMessage('admin', data.message, data.created_at);
 });
 
-function addMessage(sender, text, time) {
-  const body = document.getElementById('chatBody');
-  // remove welcome message if present
-  const welcome = body.querySelector('div[style*="text-align:center"]');
-  if (welcome) welcome.remove();
-  
-  const div = document.createElement('div');
-  div.className = 'chat-msg ' + sender;
-  const timeStr = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  div.innerHTML = '<div class="cm-bubble">' + escapeHtml(text) + '</div><div class="cm-time">' + timeStr + '</div>';
-  body.appendChild(div);
-  body.scrollTop = body.scrollHeight;
+// ===== Admin typing indicators =====
+socket.on('show_admin_typing', () => showTyping());
+socket.on('hide_admin_typing', () => hideTyping());
+
+// ===== Typing indicator helpers =====
+function ensureTypingIndicator() {
+  let ti = document.getElementById('typingIndicator');
+  if (!ti) {
+    ti = document.createElement('div');
+    ti.className = 'typing-indicator';
+    ti.id = 'typingIndicator';
+    ti.innerHTML = '<div class="ti-avatar">S</div><span>Support is typing</span>' +
+                   '<div class="typing-dots"><span></span><span></span><span></span></div>';
+    const recent = document.getElementById('recentMessages');
+    if (recent) recent.appendChild(ti);
+    else document.getElementById('chatBody').appendChild(ti);
+  }
+  return ti;
 }
 
+function showTyping() {
+  removeWelcome();
+  const ti = ensureTypingIndicator();
+  ti.classList.add('visible');
+  scrollToBottom();
+}
+
+function hideTyping() {
+  const ti = document.getElementById('typingIndicator');
+  if (ti) ti.classList.remove('visible');
+}
+
+// ===== Collapse / expand history =====
+function toggleHistory() {
+  const inner = document.getElementById('chatHistoryInner');
+  const toggle = document.getElementById('chatCollapseToggle');
+  if (!inner || !toggle) return;
+  const willExpand = !inner.classList.contains('expanded');
+
+  inner.classList.toggle('expanded', willExpand);
+  toggle.classList.toggle('expanded', willExpand);
+  historyCollapsed = !willExpand;
+  updateToggleLabel();
+
+  if (!willExpand) scrollToBottom();
+}
+
+function updateToggleLabel() {
+  const inner = document.getElementById('chatHistoryInner');
+  const label = document.getElementById('chatCollapseLabel');
+  if (!inner || !label) return;
+  const count = inner.querySelectorAll('.chat-msg').length;
+  const isExpanded = inner.classList.contains('expanded');
+  label.textContent = (isExpanded ? 'Hide ' : 'Show ') + count +
+    ' previous message' + (count === 1 ? '' : 's');
+}
+
+// ===== Message rendering =====
+function removeWelcome() {
+  const body = document.getElementById('chatBody');
+  const welcome = body.querySelector('div[style*="text-align:center"]');
+  if (welcome) welcome.remove();
+}
+
+function makeMessageEl(sender, text, time) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + (sender === 'user' ? 'user' : 'admin');
+  const timeStr = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  div.innerHTML = '<div class="cm-bubble">' + escapeHtml(text) + '</div>' +
+                  '<div class="cm-time">' + timeStr + '</div>';
+  return div;
+}
+
+function ensureRecentContainer() {
+  let recent = document.getElementById('recentMessages');
+  if (!recent) {
+    recent = document.createElement('div');
+    recent.className = 'recent-messages';
+    recent.id = 'recentMessages';
+    document.getElementById('chatBody').appendChild(recent);
+  }
+  return recent;
+}
+
+function addMessage(sender, text, time) {
+  removeWelcome();
+  const recent = ensureRecentContainer();
+  const ti = ensureTypingIndicator();
+
+  const div = makeMessageEl(sender, text, time);
+  if (ti.parentElement === recent && ti.classList.contains('visible')) {
+    recent.insertBefore(div, ti); // keep typing indicator last while visible
+  } else {
+    recent.appendChild(div);
+    recent.appendChild(ti); // indicator stays at the end
+  }
+
+  // If collapsed, fold the oldest visible message into hidden history
+  if (historyCollapsed) {
+    const visibleMsgs = recent.querySelectorAll('.chat-msg');
+    if (visibleMsgs.length > COLLAPSE_COUNT) {
+      moveIntoHistory(visibleMsgs[0]);
+    }
+  }
+  scrollToBottom();
+}
+
+function moveIntoHistory(msgEl) {
+  let block = document.getElementById('chatHistoryBlock');
+  if (!block) {
+    block = document.createElement('div');
+    block.className = 'chat-history-block';
+    block.id = 'chatHistoryBlock';
+    const body = document.getElementById('chatBody');
+    body.insertBefore(block, body.firstChild);
+  }
+
+  let inner = document.getElementById('chatHistoryInner');
+  if (!inner) {
+    inner = document.createElement('div');
+    inner.className = 'chat-history-inner' + (historyCollapsed ? '' : ' expanded');
+    inner.id = 'chatHistoryInner';
+    block.appendChild(inner);
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'chat-collapse-toggle' + (historyCollapsed ? '' : ' expanded');
+    toggle.id = 'chatCollapseToggle';
+    toggle.setAttribute('onclick', 'toggleHistory()');
+    toggle.innerHTML = '<span class="toggle-arrow">▼</span><span id="chatCollapseLabel"></span>';
+    block.appendChild(toggle);
+  }
+
+  inner.appendChild(msgEl);
+  block.style.display = 'block';
+  updateToggleLabel();
+}
+
+function scrollToBottom() {
+  const bodyEl = document.getElementById('chatBody');
+  if (bodyEl) bodyEl.scrollTop = bodyEl.scrollHeight;
+}
+
+// ===== Sending =====
 function sendMessage() {
   const input = document.getElementById('msgInput');
   const msg = input.value.trim();
   if (!msg) return;
-  
+
+  stopTypingBroadcast();
+
   fetch('/support/send', {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -94,31 +334,103 @@ function sendMessage() {
   });
 }
 
+// ===== Typing broadcast (throttled) =====
+let typingActive = false;
+let lastTypingEmit = 0;
+let typingStopTimer = null;
+
+function stopTypingBroadcast() {
+  clearTimeout(typingStopTimer);
+  if (typingActive) {
+    socket.emit('user_stop_typing', { user_id: userId });
+    typingActive = false;
+  }
+}
+
+document.getElementById('msgInput').addEventListener('input', function () {
+  const now = Date.now();
+  if (!typingActive && now - lastTypingEmit > 1500) {
+    socket.emit('user_typing', { user_id: userId });
+    typingActive = true;
+    lastTypingEmit = now;
+  }
+  clearTimeout(typingStopTimer);
+  typingStopTimer = setTimeout(stopTypingBroadcast, 1200);
+});
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
-// Auto-scroll to bottom on load
-window.onload = () => {
-  const body = document.getElementById('chatBody');
-  body.scrollTop = body.scrollHeight;
-};
-
-// Poll for new messages every 5 seconds as backup
+// ===== Backup polling (collapse-aware) =====
 setInterval(() => {
   fetch('/support/messages').then(r => r.json()).then(data => {
     if (data.messages && data.messages.length > 0) {
-      const body = document.getElementById('chatBody');
-      const currentCount = body.querySelectorAll('.chat-msg').length;
+      const currentCount = document.querySelectorAll('#chatBody .chat-msg').length;
       if (data.messages.length > currentCount) {
-        body.innerHTML = '';
-        data.messages.forEach(m => addMessage(m.sender, m.message, m.created_at));
+        rerenderAll(data.messages);
       }
     }
   });
 }, 5000);
+
+function rerenderAll(messages) {
+  removeWelcome();
+  const body = document.getElementById('chatBody');
+  const wasCollapsed = historyCollapsed;
+  const tiWasVisible = !!(document.getElementById('typingIndicator') || {}).classList && document.getElementById('typingIndicator').classList.contains('visible');
+  // ^ simple: check if the typing indicator was visible before re-render
+
+  body.innerHTML = '';
+
+  const hiddenCount = Math.max(0, messages.length - COLLAPSE_COUNT);
+  if (hiddenCount > 0) {
+    const block = document.createElement('div');
+    block.className = 'chat-history-block';
+    block.id = 'chatHistoryBlock';
+    block.style.display = 'block';
+
+    const inner = document.createElement('div');
+    inner.className = 'chat-history-inner' + (wasCollapsed ? '' : ' expanded');
+    inner.id = 'chatHistoryInner';
+    messages.slice(0, hiddenCount).forEach(m => {
+      inner.appendChild(makeMessageEl(m.sender, m.message, m.created_at));
+    });
+    block.appendChild(inner);
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'chat-collapse-toggle' + (wasCollapsed ? '' : ' expanded');
+    toggle.id = 'chatCollapseToggle';
+    toggle.setAttribute('onclick', 'toggleHistory()');
+    toggle.innerHTML = '<span class="toggle-arrow">▼</span><span id="chatCollapseLabel"></span>';
+    block.appendChild(toggle);
+
+    body.appendChild(block);
+  }
+
+  const recent = document.createElement('div');
+  recent.className = 'recent-messages';
+  recent.id = 'recentMessages';
+  messages.slice(-COLLAPSE_COUNT).forEach(m => {
+    recent.appendChild(makeMessageEl(m.sender, m.message, m.created_at));
+  });
+  const ti = document.createElement('div');
+  ti.className = 'typing-indicator' + (tiWasVisible ? ' visible' : '');
+  ti.id = 'typingIndicator';
+  ti.innerHTML = '<div class="ti-avatar">S</div><span>Support is typing</span>' +
+                 '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  recent.appendChild(ti);
+  body.appendChild(recent);
+
+  updateToggleLabel();
+  scrollToBottom();
+}
+
+// Auto-scroll on load
+window.addEventListener('load', scrollToBottom);
 </script>
 </body>
 </html>

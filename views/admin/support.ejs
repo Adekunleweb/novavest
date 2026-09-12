@@ -7,6 +7,98 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ===== Collapsible chat history (admin side) ===== */
+    .chat-history-block { margin-bottom: 4px; }
+    .chat-history-inner {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+    .chat-history-inner.expanded { max-height: 1500px; }
+    .chat-collapse-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      color: var(--gold);
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      margin-bottom: 14px;
+    }
+    .chat-collapse-toggle:hover {
+      background: rgba(212, 175, 55, 0.16);
+      border-color: rgba(212, 175, 55, 0.45);
+    }
+    .chat-collapse-toggle .toggle-arrow {
+      display: inline-block;
+      transition: transform 0.3s ease;
+      font-size: 10px;
+    }
+    .chat-collapse-toggle.expanded .toggle-arrow { transform: rotate(180deg); }
+
+    /* ===== Typing indicator (user typing, shown to admin) ===== */
+    .typing-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px 4px 2px;
+      font-size: 12.5px;
+      color: var(--gray);
+    }
+    .typing-indicator.visible { display: flex; }
+    .typing-indicator .ti-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .typing-dots { display: inline-flex; gap: 4px; }
+    .typing-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--gray);
+      animation: typingBounce 1.2s infinite ease-in-out;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* ===== Typing badge in the user list ===== */
+    .cui-typing-badge {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+      margin-top: 4px;
+    }
+    .cui-typing-badge.visible { display: inline-flex; }
+    .cui-typing-badge .typing-dots span {
+      width: 5px;
+      height: 5px;
+      background: var(--green);
+    }
+  </style>
 </head>
 <body>
 <div class="admin-layout">
@@ -34,6 +126,10 @@
                 <div class="cui-name"><%= u.full_name %></div>
                 <div class="cui-msg"><%= u.last_message || '' %></div>
                 <div style="font-size:11px; color:var(--gray); margin-top:4px;"><%= u.email %></div>
+                <div class="cui-typing-badge" id="typingBadge-<%= u.id %>">
+                  <span>typing</span>
+                  <div class="typing-dots"><span></span><span></span><span></span></div>
+                </div>
               </div>
               <% if (u.unread > 0) { %>
                 <span class="cui-unread"><%= u.unread %></span>
@@ -68,71 +164,288 @@
 <script>
 const socket = io();
 let currentUserId = null;
+const COLLAPSE_COUNT = 3; // messages kept visible by default
+let historyCollapsed = true;
+const typingUsers = new Set(); // user ids currently typing
 
 socket.on('connect', () => {
   socket.emit('join_admin');
 });
 
-// New message from a user
+// ===== New message from a user (no page reload) =====
 socket.on('new_message', (data) => {
-  // refresh user list to show the message
-  if (data.user_id === currentUserId) {
+  if (currentUserId && data.user_id === currentUserId) {
+    hideUserTyping(data.user_id);
     addMessage('user', data.message, data.created_at);
   }
-  // reload user list
-  location.reload();
+  refreshUserList(); // update list (last message, unread count) in place
 });
 
+// ===== User typing indicators =====
+socket.on('show_user_typing', (data) => {
+  typingUsers.add(data.user_id);
+  const badge = document.getElementById('typingBadge-' + data.user_id);
+  if (badge) badge.classList.add('visible');
+  if (currentUserId && data.user_id === currentUserId) {
+    const ti = document.getElementById('convTypingIndicator');
+    if (ti) ti.classList.add('visible');
+  }
+});
+
+socket.on('hide_user_typing', (data) => {
+  typingUsers.delete(data.user_id);
+  const badge = document.getElementById('typingBadge-' + data.user_id);
+  if (badge) badge.classList.remove('visible');
+  if (currentUserId && data.user_id === currentUserId) {
+    const ti = document.getElementById('convTypingIndicator');
+    if (ti) ti.classList.remove('visible');
+  }
+});
+
+function hideUserTyping(userId) {
+  typingUsers.delete(userId);
+  const badge = document.getElementById('typingBadge-' + userId);
+  if (badge) badge.classList.remove('visible');
+  const ti = document.getElementById('convTypingIndicator');
+  if (ti) ti.classList.remove('visible');
+}
+
+// ===== Refresh user list in place (no page reload) =====
+function refreshUserList() {
+  fetch('/admin/support/users/list')
+    .then(r => r.json())
+    .then(data => {
+      const list = document.getElementById('userList');
+      if (!data.users || data.users.length === 0) {
+        list.innerHTML = '<div class="chat-empty" style="padding:40px 20px; text-align:center;"><div style="font-size:36px; margin-bottom:12px;">💬</div><p style="font-size:14px;">No conversations yet.<br>When users send messages, they\'ll appear here.</p></div>';
+        return;
+      }
+      let html = '';
+      data.users.forEach(u => {
+        const isActive = (u.id === currentUserId);
+        const isTyping = typingUsers.has(u.id);
+        const badgeHtml = '<div class="cui-typing-badge' + (isTyping ? ' visible' : '') + '" id="typingBadge-' + u.id + '">'
+                        + '<span>typing</span><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+        html += '<div class="chat-user-item' + (isActive ? ' active' : '') + '" onclick="openChat(' + u.id + ')" id="user-item-' + u.id + '">'
+             +  '<div style="flex:1; overflow:hidden;">'
+             +  '<div class="cui-name">' + escapeHtml(u.full_name) + '</div>'
+             +  '<div class="cui-msg">' + escapeHtml(u.last_message || '') + '</div>'
+             +  '<div style="font-size:11px; color:var(--gray); margin-top:4px;">' + escapeHtml(u.email) + '</div>'
+             +  badgeHtml
+             +  '</div>'
+             +  (u.unread > 0 ? '<span class="cui-unread">' + u.unread + '</span>' : '')
+             +  '</div>';
+      });
+      list.innerHTML = html;
+    });
+}
+
+// ===== Open a conversation =====
 function openChat(userId) {
   currentUserId = userId;
-  
-  // highlight selected
+  historyCollapsed = true; // start collapsed for each conversation
+
+  // highlight selected user
   document.querySelectorAll('.chat-user-item').forEach(i => i.classList.remove('active'));
   const item = document.getElementById('user-item-' + userId);
   if (item) item.classList.add('active');
-  
+
   // show conversation UI
   document.getElementById('convHeader').style.display = 'block';
   document.getElementById('convInput').style.display = 'flex';
   document.getElementById('convBody').innerHTML = '<div class="chat-empty">Loading messages...</div>';
-  
+
   fetch('/admin/support/' + userId + '/messages')
     .then(r => r.json())
     .then(data => {
       document.getElementById('convName').textContent = data.user.full_name;
       document.getElementById('convEmail').textContent = data.user.email;
-      const body = document.getElementById('convBody');
-      body.innerHTML = '';
-      if (data.messages.length === 0) {
-        body.innerHTML = '<div class="chat-empty"><p>No messages yet. Say hello!</p></div>';
-      } else {
-        data.messages.forEach(m => addMessage(m.sender, m.message, m.created_at));
-      }
-      body.scrollTop = body.scrollHeight;
+      renderConversation(data.messages);
+      refreshUserList(); // clears the unread badge for this user
     });
-  
-  // remove unread badge
-  if (item) {
-    const badge = item.querySelector('.cui-unread');
-    if (badge) badge.remove();
+}
+
+function renderConversation(messages) {
+  const body = document.getElementById('convBody');
+  body.innerHTML = '';
+
+  if (!messages || messages.length === 0) {
+    body.innerHTML = '<div class="chat-empty"><p>No messages yet. Say hello!</p></div>';
+    return;
   }
+
+  const hiddenCount = messages.length - COLLAPSE_COUNT;
+
+  // Hidden (older) messages + toggle button
+  if (hiddenCount > 0) {
+    const block = document.createElement('div');
+    block.className = 'chat-history-block';
+    block.id = 'convHistoryBlock';
+
+    const inner = document.createElement('div');
+    inner.className = 'chat-history-inner'; // collapsed by default
+    inner.id = 'convHistoryInner';
+    messages.slice(0, hiddenCount).forEach(m => {
+      inner.appendChild(makeMessageEl(m.sender, m.message, m.created_at));
+    });
+    block.appendChild(inner);
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'chat-collapse-toggle';
+    toggle.id = 'convCollapseToggle';
+    toggle.setAttribute('onclick', 'toggleHistory()');
+    toggle.innerHTML = '<span class="toggle-arrow">▼</span><span id="convCollapseLabel"></span>';
+    block.appendChild(toggle);
+
+    body.appendChild(block);
+    updateToggleLabel();
+  }
+
+  // Recent messages (last 3) + typing indicator
+  const recent = document.createElement('div');
+  recent.className = 'recent-messages';
+  recent.id = 'convRecent';
+  messages.slice(-COLLAPSE_COUNT).forEach(m => {
+    recent.appendChild(makeMessageEl(m.sender, m.message, m.created_at));
+  });
+
+  const ti = document.createElement('div');
+  ti.className = 'typing-indicator';
+  ti.id = 'convTypingIndicator';
+  ti.innerHTML = '<div class="ti-avatar">U</div><span>User is typing</span><div class="typing-dots"><span></span><span></span><span></span></div>';
+  recent.appendChild(ti);
+
+  // if this user is already flagged as typing, keep the bubble visible
+  if (currentUserId && typingUsers.has(currentUserId)) ti.classList.add('visible');
+
+  body.appendChild(recent);
+  body.scrollTop = body.scrollHeight;
+}
+
+// ===== Collapse / expand =====
+function toggleHistory() {
+  const inner = document.getElementById('convHistoryInner');
+  const toggle = document.getElementById('convCollapseToggle');
+  if (!inner || !toggle) return;
+  const willExpand = !inner.classList.contains('expanded');
+
+  inner.classList.toggle('expanded', willExpand);
+  toggle.classList.toggle('expanded', willExpand);
+  historyCollapsed = !willExpand;
+  updateToggleLabel();
+
+  if (!willExpand) {
+    const body = document.getElementById('convBody');
+    body.scrollTop = body.scrollHeight;
+  }
+}
+
+function updateToggleLabel() {
+  const inner = document.getElementById('convHistoryInner');
+  const label = document.getElementById('convCollapseLabel');
+  if (!inner || !label) return;
+  const count = inner.querySelectorAll('.chat-msg').length;
+  const isExpanded = inner.classList.contains('expanded');
+  label.textContent = (isExpanded ? 'Hide ' : 'Show ') + count +
+    ' previous message' + (count === 1 ? '' : 's');
+}
+
+// ===== Messages =====
+function makeMessageEl(sender, text, time) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + (sender === 'user' ? 'user' : 'admin');
+  const timeStr = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  div.innerHTML = '<div class="cm-bubble">' + escapeHtml(text) + '</div>' +
+                  '<div class="cm-time">' + (sender === 'admin' ? 'Support · ' : '') + timeStr + '</div>';
+  return div;
+}
+
+function ensureTypingIndicator(recent) {
+  let ti = document.getElementById('convTypingIndicator');
+  if (!ti) {
+    ti = document.createElement('div');
+    ti.className = 'typing-indicator';
+    ti.id = 'convTypingIndicator';
+    ti.innerHTML = '<div class="ti-avatar">U</div><span>User is typing</span><div class="typing-dots"><span></span><span></span><span></span></div>';
+    recent.appendChild(ti);
+  } else if (ti.parentElement !== recent) {
+    recent.appendChild(ti);
+  }
+  return ti;
 }
 
 function addMessage(sender, text, time) {
   const body = document.getElementById('convBody');
-  const div = document.createElement('div');
-  div.className = 'chat-msg ' + sender;
-  const timeStr = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  div.innerHTML = '<div class="cm-bubble">' + escapeHtml(text) + '</div><div class="cm-time">' + (sender === 'admin' ? 'Support · ' : '') + timeStr + '</div>';
-  body.appendChild(div);
+  const empty = body.querySelector('.chat-empty');
+  if (empty) empty.remove();
+
+  let recent = document.getElementById('convRecent');
+  if (!recent) {
+    recent = document.createElement('div');
+    recent.className = 'recent-messages';
+    recent.id = 'convRecent';
+    body.appendChild(recent);
+  }
+  const ti = ensureTypingIndicator(recent);
+
+  const div = makeMessageEl(sender, text, time);
+  if (ti.classList.contains('visible')) {
+    recent.insertBefore(div, ti); // keep typing indicator last while visible
+  } else {
+    recent.appendChild(div);
+    recent.appendChild(ti);
+  }
+
+  // If collapsed, fold the oldest visible message into hidden history
+  if (historyCollapsed) {
+    const visibleMsgs = recent.querySelectorAll('.chat-msg');
+    if (visibleMsgs.length > COLLAPSE_COUNT) {
+      moveIntoHistory(visibleMsgs[0]);
+    }
+  }
   body.scrollTop = body.scrollHeight;
 }
 
+function moveIntoHistory(msgEl) {
+  const body = document.getElementById('convBody');
+
+  let block = document.getElementById('convHistoryBlock');
+  if (!block) {
+    block = document.createElement('div');
+    block.className = 'chat-history-block';
+    block.id = 'convHistoryBlock';
+    body.insertBefore(block, body.firstChild);
+  }
+
+  let inner = document.getElementById('convHistoryInner');
+  if (!inner) {
+    inner = document.createElement('div');
+    inner.className = 'chat-history-inner' + (historyCollapsed ? '' : ' expanded');
+    inner.id = 'convHistoryInner';
+    block.appendChild(inner);
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'chat-collapse-toggle' + (historyCollapsed ? '' : ' expanded');
+    toggle.id = 'convCollapseToggle';
+    toggle.setAttribute('onclick', 'toggleHistory()');
+    toggle.innerHTML = '<span class="toggle-arrow">▼</span><span id="convCollapseLabel"></span>';
+    block.appendChild(toggle);
+  }
+
+  inner.appendChild(msgEl);
+  updateToggleLabel();
+}
+
+// ===== Admin sending =====
 function adminSend() {
   const input = document.getElementById('adminMsgInput');
   const msg = input.value.trim();
   if (!msg || !currentUserId) return;
-  
+
+  stopAdminTypingBroadcast();
+
   fetch('/admin/support/' + currentUserId + '/send', {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -144,6 +457,33 @@ function adminSend() {
     }
   });
 }
+
+// ===== Admin typing broadcast (visible to the user in real time) =====
+let adminTypingActive = false;
+let adminLastEmit = 0;
+let adminTypingStopTimer = null;
+let adminTypingTarget = null; // user id the typing event was sent to
+
+function stopAdminTypingBroadcast() {
+  clearTimeout(adminTypingStopTimer);
+  if (adminTypingActive && adminTypingTarget) {
+    socket.emit('admin_stop_typing', { user_id: adminTypingTarget });
+    adminTypingActive = false;
+  }
+}
+
+document.getElementById('adminMsgInput').addEventListener('input', function () {
+  if (!currentUserId) return;
+  const now = Date.now();
+  if (!adminTypingActive && now - adminLastEmit > 1500) {
+    socket.emit('admin_typing', { user_id: currentUserId });
+    adminTypingActive = true;
+    adminLastEmit = now;
+    adminTypingTarget = currentUserId;
+  }
+  clearTimeout(adminTypingStopTimer);
+  adminTypingStopTimer = setTimeout(stopAdminTypingBroadcast, 1200);
+});
 
 function escapeHtml(str) {
   const div = document.createElement('div');
