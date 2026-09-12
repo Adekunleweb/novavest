@@ -81,6 +81,53 @@
       0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
       30% { transform: translateY(-4px); opacity: 1; }
     }
+
+    /* ===== Chat image support ===== */
+    .cm-bubble .chat-img {
+      display: block;
+      max-width: 240px;
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .chat-msg.user .cm-bubble .chat-img { border-color: rgba(212,175,55,0.4); }
+    .attach-btn {
+      background: transparent;
+      border: none;
+      color: var(--gray);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: background 0.15s ease, color 0.15s ease;
+      flex-shrink: 0;
+    }
+    .attach-btn:hover { background: rgba(212,175,55,0.1); color: var(--gold); }
+    .img-preview-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(212,175,55,0.06);
+      border: 1px solid rgba(212,175,55,0.25);
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+    }
+    .img-preview-bar.visible { display: flex; }
+    .img-preview-bar img {
+      width: 46px; height: 46px; object-fit: cover; border-radius: 8px;
+      border: 1px solid rgba(212,175,55,0.4);
+    }
+    .img-preview-bar .ip-name {
+      flex: 1; font-size: 13px; color: var(--navy); font-weight: 600;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .img-preview-bar .ip-remove {
+      background: none; border: none; color: #e74c3c; font-size: 17px; cursor: pointer; padding: 4px 6px;
+    }
+    .img-send-note { font-size: 11px; color: var(--gray); }
   </style>
 </head>
 <body>
@@ -119,7 +166,12 @@
               <div class="chat-history-inner" id="chatHistoryInner">
                 <% hiddenMessages.forEach(function(m) { %>
                   <div class="chat-msg <%= m.sender === 'user' ? 'user' : 'admin' %>">
-                    <div class="cm-bubble"><%= m.message %></div>
+                    <div class="cm-bubble">
+                      <% if (m.image_path) { %>
+                        <img class="chat-img" src="<%= m.image_path %>" alt="Attached image" onclick="openImagePopup('<%= m.image_path %>')">
+                      <% } %>
+                      <%= m.message %>
+                    </div>
                     <div class="cm-time"><%= new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) %></div>
                   </div>
                 <% }) %>
@@ -133,7 +185,12 @@
           <div class="recent-messages" id="recentMessages">
             <% recentMessages.forEach(function(m) { %>
               <div class="chat-msg <%= m.sender === 'user' ? 'user' : 'admin' %>">
-                <div class="cm-bubble"><%= m.message %></div>
+                <div class="cm-bubble">
+                  <% if (m.image_path) { %>
+                    <img class="chat-img" src="<%= m.image_path %>" alt="Attached image" onclick="openImagePopup('<%= m.image_path %>')">
+                  <% } %>
+                  <%= m.message %>
+                </div>
                 <div class="cm-time"><%= new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) %></div>
               </div>
             <% }) %>
@@ -145,7 +202,17 @@
           </div>
         <% } %>
       </div>
+      <div class="img-preview-bar" id="imgPreviewBar">
+        <img id="ipThumb" src="" alt="Preview">
+        <div style="flex:1; overflow:hidden;">
+          <div class="ip-name" id="ipName"></div>
+          <div class="img-send-note">Attached — will be sent with your next message</div>
+        </div>
+        <button type="button" class="ip-remove" onclick="clearAttachedImage()" title="Remove attachment">✕</button>
+      </div>
       <div class="chat-input">
+        <input type="file" id="imgInput" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" style="display:none" onchange="onImagePicked()">
+        <button class="attach-btn" type="button" onclick="document.getElementById('imgInput').click()" title="Attach an image">📎</button>
         <input type="text" id="msgInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter')sendMessage()">
         <button onclick="sendMessage()">➤</button>
       </div>
@@ -168,7 +235,7 @@ socket.on('connect', () => {
 // ===== Real-time admin messages =====
 socket.on('admin_message', (data) => {
   hideTyping();
-  addMessage('admin', data.message, data.created_at);
+  addMessage('admin', data.message, data.created_at, data.image_path);
 });
 
 // ===== Admin typing indicators =====
@@ -235,11 +302,18 @@ function removeWelcome() {
   if (welcome) welcome.remove();
 }
 
-function makeMessageEl(sender, text, time) {
+function makeMessageEl(sender, text, time, imagePath) {
   const div = document.createElement('div');
   div.className = 'chat-msg ' + (sender === 'user' ? 'user' : 'admin');
   const timeStr = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  div.innerHTML = '<div class="cm-bubble">' + escapeHtml(text) + '</div>' +
+  let bubbleHtml = '';
+  if (imagePath) {
+    bubbleHtml += '<img class="chat-img" src="' + imagePath + '" alt="Attached image" onclick="openImagePopup(\'' + imagePath + '\')">';
+  }
+  if (text && text !== '[Image]') {
+    bubbleHtml += escapeHtml(text);
+  }
+  div.innerHTML = '<div class="cm-bubble">' + bubbleHtml + '</div>' +
                   '<div class="cm-time">' + timeStr + '</div>';
   return div;
 }
@@ -255,12 +329,12 @@ function ensureRecentContainer() {
   return recent;
 }
 
-function addMessage(sender, text, time) {
+function addMessage(sender, text, time, imagePath) {
   removeWelcome();
   const recent = ensureRecentContainer();
   const ti = ensureTypingIndicator();
 
-  const div = makeMessageEl(sender, text, time);
+  const div = makeMessageEl(sender, text, time, imagePath);
   if (ti.parentElement === recent && ti.classList.contains('visible')) {
     recent.insertBefore(div, ti); // keep typing indicator last while visible
   } else {
@@ -318,6 +392,12 @@ function scrollToBottom() {
 function sendMessage() {
   const input = document.getElementById('msgInput');
   const msg = input.value.trim();
+
+  // If an image is attached, send it via the image endpoint (with optional caption)
+  if (pendingImageFile) {
+    sendImageMessage(msg);
+    return;
+  }
   if (!msg) return;
 
   stopTypingBroadcast();
@@ -332,6 +412,75 @@ function sendMessage() {
       input.value = '';
     }
   });
+}
+
+// ===== Image attachment flow =====
+let pendingImageFile = null;
+
+function onImagePicked() {
+  const fi = document.getElementById('imgInput');
+  const file = fi.files && fi.files[0];
+  if (!file) return;
+  if (!/^image\/(png|jpe?g|gif|webp)$/i.test(file.type)) {
+    alert('Only PNG, JPG, GIF or WEBP images are allowed.');
+    fi.value = '';
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Image is too large — max 5MB.');
+    fi.value = '';
+    return;
+  }
+  pendingImageFile = file;
+  document.getElementById('ipThumb').src = URL.createObjectURL(file);
+  document.getElementById('ipName').textContent = file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+  document.getElementById('imgPreviewBar').classList.add('visible');
+}
+
+function clearAttachedImage() {
+  pendingImageFile = null;
+  const fi = document.getElementById('imgInput');
+  if (fi) fi.value = '';
+  document.getElementById('imgPreviewBar').classList.remove('visible');
+}
+
+function sendImageMessage(caption) {
+  if (!pendingImageFile) return;
+  stopTypingBroadcast();
+
+  const fd = new FormData();
+  fd.append('image', pendingImageFile);
+  if (caption) fd.append('message', caption);
+
+  const input = document.getElementById('msgInput');
+  input.value = '';
+  clearAttachedImage();
+
+  fetch('/support/send-image', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        addMessage('user', caption || '[Image]', new Date().toISOString(), data.image_path);
+      } else {
+        alert(data.error || 'Could not send the image.');
+      }
+    })
+    .catch(() => alert('Could not send the image.'));
+}
+
+// ===== Image popup (click to enlarge) =====
+function openImagePopup(src) {
+  let ov = document.getElementById('imgPopupOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'imgPopupOverlay';
+    ov.style.cssText = 'position:fixed; inset:0; background:rgba(3,8,18,0.9); z-index:1500; display:none; align-items:center; justify-content:center; cursor:zoom-out; padding:24px;';
+    ov.innerHTML = '<img id="imgPopupImg" style="max-width:94%; max-height:94%; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.6);">';
+    ov.onclick = function() { ov.style.display = 'none'; };
+    document.body.appendChild(ov);
+  }
+  document.getElementById('imgPopupImg').src = src;
+  ov.style.display = 'flex';
 }
 
 // ===== Typing broadcast (throttled) =====
@@ -396,7 +545,7 @@ function rerenderAll(messages) {
     inner.className = 'chat-history-inner' + (wasCollapsed ? '' : ' expanded');
     inner.id = 'chatHistoryInner';
     messages.slice(0, hiddenCount).forEach(m => {
-      inner.appendChild(makeMessageEl(m.sender, m.message, m.created_at));
+      inner.appendChild(makeMessageEl(m.sender, m.message, m.created_at, m.image_path));
     });
     block.appendChild(inner);
 
@@ -415,7 +564,7 @@ function rerenderAll(messages) {
   recent.className = 'recent-messages';
   recent.id = 'recentMessages';
   messages.slice(-COLLAPSE_COUNT).forEach(m => {
-    recent.appendChild(makeMessageEl(m.sender, m.message, m.created_at));
+    recent.appendChild(makeMessageEl(m.sender, m.message, m.created_at, m.image_path));
   });
   const ti = document.createElement('div');
   ti.className = 'typing-indicator' + (tiWasVisible ? ' visible' : '');

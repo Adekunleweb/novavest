@@ -426,6 +426,34 @@ ${bodyHtml}
   return sendEmail(user.email, subject + ' — ApexCrestVest ✉️', content, { fromName: 'ApexCrestVest Team', replyTo: replyToEmail, tags: [{ name: 'type', value: 'individual' }] });
 }
 
+// Transaction reversed by admin — includes the admin's reason in the email
+async function notifyTransactionReversed(user, txn) {
+  const typeLabel = txn.type ? txn.type.charAt(0).toUpperCase() + txn.type.slice(1) : 'Transaction';
+  const content = `
+    <h2 style="margin:0 0 20px;color:#e6f1ff;font-size:22px;">${typeLabel} Reversed \u26a4</h2>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      Dear ${user.full_name}, one of your transactions has been reversed by our review team. The related amount has been adjusted in your account balance accordingly.
+    </p>
+    <div style="background:#0a1628;border-radius:10px;padding:20px;margin:25px 0;border-left:3px solid #e74c3c;">
+      <p style="margin:0 0 8px;color:#8892b0;font-size:13px;">Reversed Transaction:</p>
+      <p style="margin:0;color:#e6f1ff;font-size:15px;"><strong>Type:</strong> ${typeLabel}</p>
+      <p style="margin:5px 0 0;color:#e6f1ff;font-size:15px;"><strong>Amount:</strong> $${txn.amount}</p>
+      <p style="margin:5px 0 0;color:#e6f1ff;font-size:15px;"><strong>Date Reversed:</strong> ${new Date(txn.reversal_date).toLocaleString()}</p>
+      <p style="margin:5px 0 0;color:#e6f1ff;font-size:15px;"><strong>Status:</strong> <span style="color:#e74c3c;">Reversed</span></p>
+    </div>
+    <div style="background:#0a1628;border-radius:10px;padding:20px;margin:25px 0;border-left:3px solid #d4af37;">
+      <p style="margin:0 0 8px;color:#8892b0;font-size:13px;">Reason for reversal:</p>
+      <p style="margin:0;color:#e6f1ff;font-size:15px;font-style:italic;">"${txn.reason}"</p>
+    </div>
+    <p style="color:#a8b2d1;font-size:15px;line-height:1.7;">
+      If you believe this reversal was made in error, please contact our support team and we'll review it right away.
+    </p>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${frontendUrl}/support" style="background:#d4af37;color:#0a1628;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Contact Support</a>
+    </div>`;
+  return sendEmail(user.email, `${typeLabel} Reversed \u2014 Action Required`, content);
+}
+
 module.exports = {
   sendEmail,
   notifySignup,
@@ -443,7 +471,8 @@ module.exports = {
   notifySupportTicketAlert,
   notifyIndividualMessage,
   notifyPasswordReset,
-  notifyPasswordChanged
+  notifyPasswordChanged,
+  notifyTransactionReversed
 };
 
 // Password reset email

@@ -15,9 +15,25 @@
     <div class="admin-header">
       <div>
         <h1>Deposits</h1>
-        <div class="sub" style="color:var(--gray);">Approve or reject user deposit requests</div>
+        <div class="sub" style="color:var(--gray);">Approve or reject user deposit requests — reverse any approved deposit with a reason</div>
       </div>
     </div>
+
+    <% if (req_query_error === 'reason') { %>
+      <div style="background:#fee2e2; color:#991b1b; padding:12px 18px; border-radius:8px; margin-bottom:16px; font-size:14px; font-weight:600;">⚠ A reason is required before reversing a transaction.</div>
+    <% } %>
+    <% if (req_query_error === 'notcompleted') { %>
+      <div style="background:#fee2e2; color:#991b1b; padding:12px 18px; border-radius:8px; margin-bottom:16px; font-size:14px; font-weight:600;">⚠ Only approved (completed) transactions can be reversed.</div>
+    <% } %>
+    <% if (req_query_error === 'notreversed') { %>
+      <div style="background:#fee2e2; color:#991b1b; padding:12px 18px; border-radius:8px; margin-bottom:16px; font-size:14px; font-weight:600;">⚠ Only reversed transactions can be restored.</div>
+    <% } %>
+    <% if (req_query_reversed) { %>
+      <div style="background:#dcfce7; color:#166534; padding:12px 18px; border-radius:8px; margin-bottom:16px; font-size:14px; font-weight:600;">✓ Transaction reversed — balance adjusted and user emailed with your reason.</div>
+    <% } %>
+    <% if (req_query_restored) { %>
+      <div style="background:#dcfce7; color:#166534; padding:12px 18px; border-radius:8px; margin-bottom:16px; font-size:14px; font-weight:600;">✓ Transaction restored — balance re-applied.</div>
+    <% } %>
 
     <div class="dash-panel">
       <% if (deposits.length === 0) { %>
@@ -33,13 +49,17 @@
                 <td style="font-size:12px;"><%= d.email %></td>
                 <td><%= d.currency %></td>
                 <td>$<%= d.amount.toLocaleString() %></td>
-                <td style="font-family:monospace; font-size:11px;"><%= d.wallet_address ? d.wallet_address.substring(0,20)+'...' : '—' %></td>
-                <td style="font-family:monospace; font-size:11px;"><%= d.tx_hash ? d.tx_hash.substring(0,16)+'...' : '—' %></td>
+                <td style="font-family:monospace; font-size:11px;"><%= d.wallet_address ? d.wallet_address.substring(0,20)+'...' : '\u2014' %></td>
+                <td style="font-family:monospace; font-size:11px;"><%= d.tx_hash ? d.tx_hash.substring(0,16)+'...' : '\u2014' %></td>
                 <td><span class="badge badge-<%= d.status %>"><%= d.status %></span></td>
                 <td>
                   <% if (d.status === 'pending') { %>
                     <form action="/admin/deposits/<%= d.id %>/approve" method="POST" style="display:inline;"><button class="btn btn-gold btn-sm" style="padding:4px 12px;">✓ Approve</button></form>
                     <form action="/admin/deposits/<%= d.id %>/reject" method="POST" style="display:inline;"><button class="btn btn-navy btn-sm" style="padding:4px 12px;">✗ Reject</button></form>
+                  <% } else if (d.status === 'confirmed' && d.transaction_id) { %>
+                    <button type="button" class="btn btn-navy btn-sm" style="padding:4px 12px; background:#7f1d1d;" onclick="openReverseModal(<%= d.transaction_id %>, '<%= d.full_name.replace(/'/g, "\\'") %>', $<%= d.amount %>)">⇄ Reverse</button>
+                  <% } else if (d.status === 'reversed' && d.transaction_id) { %>
+                    <form action="/admin/transactions/<%= d.transaction_id %>/restore" method="POST" style="display:inline;"><button class="btn btn-gold btn-sm" style="padding:4px 12px;">↺ Restore</button></form>
                   <% } else { %>
                     <span style="color:var(--gray); font-size:12px;">—</span>
                   <% } %>
@@ -52,5 +72,57 @@
     </div>
   </main>
 </div>
+
+<!-- Reverse reason modal -->
+<div class="reverse-modal-overlay" id="reverseModalOverlay" onclick="if(event.target===this) closeReverseModal()">
+  <div class="reverse-modal">
+    <h3>⇄ Reverse Transaction</h3>
+    <div class="rm-sub">Reversing will undo the balance effect, mark the transaction as <strong>reversed</strong> in the user's dashboard, and email the user with your reason. This can be undone later with Restore.</div>
+    <div class="rm-target" id="rmTarget"></div>
+    <label style="display:block; color:var(--white); font-size:13px; font-weight:600; margin-bottom:8px;">Reason for reversal <span style="color:#e74c3c;">*</span></label>
+    <textarea id="rmReason" maxlength="500" placeholder="Explain why you are reversing this transaction (the user will see this reason by email and in their dashboard)..."></textarea>
+    <div class="rm-error" id="rmError">Please enter a reason before reversing.</div>
+    <div class="rm-actions">
+      <button type="button" class="btn btn-navy btn-sm" onclick="closeReverseModal()">Cancel</button>
+      <button type="button" class="btn btn-gold btn-sm" id="rmConfirm" onclick="submitReverse()">⇄ Reverse Now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var rmTxnId = null;
+  function openReverseModal(txnId, userName, amount) {
+    rmTxnId = txnId;
+    document.getElementById('rmTarget').textContent = userName + ' — Deposit ' + amount;
+    document.getElementById('rmReason').value = '';
+    document.getElementById('rmError').style.display = 'none';
+    document.getElementById('reverseModalOverlay').classList.add('open');
+    setTimeout(function(){ document.getElementById('rmReason').focus(); }, 60);
+  }
+  function closeReverseModal() {
+    document.getElementById('reverseModalOverlay').classList.remove('open');
+    rmTxnId = null;
+  }
+  function submitReverse() {
+    var reason = document.getElementById('rmReason').value.trim();
+    if (!reason) {
+      document.getElementById('rmError').style.display = 'block';
+      return;
+    }
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/transactions/' + rmTxnId + '/reverse';
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'reason';
+    input.value = reason;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeReverseModal();
+  });
+</script>
 </body>
 </html>

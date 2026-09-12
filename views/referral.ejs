@@ -15,7 +15,7 @@
     <div class="dash-header">
       <div>
         <h1>Referral Program 🎁</h1>
-        <div class="sub">Invite friends and earn $700 for every signup</div>
+        <div class="sub">Invite friends and earn $70 for every signup</div>
       </div>
     </div>
 
@@ -33,7 +33,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon blue">🚀</div>
-        <div class="stat-val">$700</div>
+        <div class="stat-val">$70</div>
         <div class="stat-lbl">Per Referral</div>
       </div>
     </div>
@@ -41,7 +41,7 @@
     <!-- Referral Link -->
     <div class="dash-panel">
       <div class="dash-panel-title">Your Referral Link</div>
-      <p style="color:var(--gray); margin-bottom:16px;">Share this link with friends, family, and your network. Every person who signs up through your link earns you $700 instantly!</p>
+      <p style="color:var(--gray); margin-bottom:16px;">Share this link with friends, family, and your network. Every person who signs up through your link earns you $70 instantly!</p>
       <div class="referral-link-box" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
         <input type="text" id="refLink" value="<%= referralLink %>" readonly style="flex:1; min-width:200px; padding:14px 18px; background:var(--navy); border:1px solid rgba(212,175,55,0.3); border-radius:10px; color:var(--gold); font-size:15px; font-weight:600;">
         <button onclick="copyRefLink()" class="btn btn-gold" style="white-space:nowrap;">📋 Copy Link</button>
@@ -65,8 +65,8 @@
         </div>
         <div style="text-align:center; padding:20px;">
           <div style="font-size:32px; margin-bottom:8px;">3️⃣</div>
-          <div style="font-weight:700; color:var(--white); margin-bottom:4px;">You Earn $700</div>
-          <div style="color:var(--gray); font-size:13px;">You receive $700 automatically in your balance for every successful referral. No limits!</div>
+          <div style="font-weight:700; color:var(--white); margin-bottom:4px;">You Earn $70</div>
+          <div style="color:var(--gray); font-size:13px;">You receive $70 automatically in your balance for every successful referral. No limits!</div>
         </div>
       </div>
     </div>
@@ -75,7 +75,7 @@
     <div class="dash-panel">
       <div class="dash-panel-title">Your Referrals</div>
       <% if (referrals.length === 0) { %>
-        <p style="color:var(--gray); text-align:center; padding:40px;">No referrals yet. Start sharing your link to earn $700 per signup! 🚀</p>
+        <p style="color:var(--gray); text-align:center; padding:40px;">No referrals yet. Start sharing your link to earn $70 per signup! 🚀</p>
       <% } else { %>
         <table class="table">
           <thead><tr><th>#</th><th>Name</th><th>Date Joined</th><th>Your Bonus</th></tr></thead>
@@ -85,7 +85,7 @@
                 <td><%= i + 1 %></td>
                 <td><%= r.full_name %></td>
                 <td><%= new Date(r.created_at).toLocaleDateString() %></td>
-                <td style="color:var(--green); font-weight:700;">+$700.00</td>
+                <td style="color:var(--green); font-weight:700;">+$70.00</td>
               </tr>
             <% }) %>
           </tbody>

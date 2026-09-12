@@ -35,6 +35,10 @@
     }
     .txn-status-badge.completed { background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
     .txn-status-badge.pending { background: rgba(240,173,78,0.15); color: #f0ad4e; border: 1px solid rgba(240,173,78,0.3); }
+    .txn-status-badge.reversed { background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px dashed rgba(231,76,60,0.4); }
+    .txn-reason-box { background: rgba(231,76,60,0.06); border: 1px dashed rgba(231,76,60,0.35); border-radius: 10px; padding: 16px 20px; margin: 20px 32px 0; }
+    .txn-reason-box .lbl { color: #8892b0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .txn-reason-box .txt { color: #e6f1ff; font-size: 15px; font-style: italic; line-height: 1.6; }
     .txn-status-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
@@ -130,9 +134,17 @@
           </h2>
           <div class="txn-status-badge <%= txn.status %>">
             <span class="dot"></span>
-            <%= txn.status === 'completed' ? 'Confirmed' : txn.status %>
+            <%= txn.status === 'completed' ? 'Confirmed' : txn.status === 'reversed' ? 'Reversed' : txn.status %>
           </div>
         </div>
+
+        <% if (txn.status === 'reversed') { %>
+        <div class="txn-reason-box">
+          <div class="lbl">⚠ Reason for Reversal</div>
+          <div class="txt">"<%= txn.reversal_reason || 'Reversed by administrator' %>"</div>
+          <% if (txn.reversed_at) { %><div style="color:#8892b0; font-size:12px; margin-top:8px;">Reversed on <%= new Date(txn.reversed_at).toLocaleString() %></div><% } %>
+        </div>
+        <% } %>
 
         <!-- Amount -->
         <div class="txn-amount-section">
@@ -234,6 +246,22 @@
           <div class="txn-conf-text">
             <strong style="color:#f0ad4e;">Awaiting Confirmation</strong><br>
             This transaction is being processed. You will be notified once it's confirmed.
+          </div>
+        </div>
+        <% } else if (txn.status === 'reversed') { %>
+        <div class="txn-confirmation-bar" style="background:rgba(231,76,60,0.05); border-top-color:rgba(231,76,60,0.15);">
+          <div class="txn-conf-icon" style="background:rgba(231,76,60,0.15); color:#e74c3c;">⇄</div>
+          <div class="txn-conf-text">
+            <strong style="color:#e74c3c;">Transaction Reversed</strong><br>
+            This transaction was reversed by our review team. The related amount has been adjusted in your account balance. Please contact support if you have questions.
+          </div>
+        </div>
+        <% } else { %>
+        <div class="txn-confirmation-bar" style="background:rgba(231,76,60,0.05); border-top-color:rgba(231,76,60,0.15);">
+          <div class="txn-conf-icon" style="background:rgba(231,76,60,0.15); color:#e74c3c;">✗</div>
+          <div class="txn-conf-text">
+            <strong style="color:#e74c3c;"><%= txn.status.charAt(0).toUpperCase() + txn.status.slice(1) %></strong><br>
+            This transaction was not completed. Please contact support if you have questions.
           </div>
         </div>
         <% } %>

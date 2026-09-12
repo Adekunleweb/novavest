@@ -77,7 +77,11 @@
                 <td class="txn-amount-cell <%= t.type %>">
                   <%= t.type === 'withdrawal' ? '-' : '+' %>$<%= t.amount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) %>
                 </td>
-                <td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td>
+                <td><span class="badge badge-<%= t.status %>"><%= t.status %></span>
+                  <% if (t.status === 'reversed' && t.reversal_reason) { %>
+                    <div style="font-size:11px; color:var(--gray); margin-top:4px; font-style:italic; max-width:220px;">Reason: <%= t.reversal_reason %></div>
+                  <% } %>
+                </td>
                 <td><span class="txn-chev">→</span></td>
               </tr>
             <% }) %>

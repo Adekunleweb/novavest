@@ -239,13 +239,13 @@ We'd love to see you earning again.`,
   {
     id: 'engage_referral_earn',
     category: 'Re-Engagement',
-    title: 'Earn $700 Per Friend You Refer',
+    title: 'Earn $70 Per Friend You Refer',
     subject: 'Turn your friends into earnings, {{name}} 🎉',
     body: `Hello {{name}},
 
-Did you know you can earn $700 for every friend you refer to ApexCrestVest?
+Did you know you can earn $70 for every friend you refer to ApexCrestVest?
 
-Your unique referral link is waiting in your dashboard. Every time someone signs up using your link, $700 is credited straight to your account — no investment required, no limit on how many friends you can refer.
+Your unique referral link is waiting in your dashboard. Every time someone signs up using your link, $70 is credited straight to your account — no investment required, no limit on how many friends you can refer.
 
 It's one of the easiest ways to boost your balance. A few shares with the right people could fund your next investment entirely.
 

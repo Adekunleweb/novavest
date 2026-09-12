@@ -102,14 +102,45 @@
     <div class="detail-grid" style="margin-top:24px;">
       <div class="dash-panel">
         <div class="dash-panel-title">Transactions</div>
+        <% if (req_query_error === 'reason') { %>
+          <div style="background:#fee2e2; color:#991b1b; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:600;">⚠ A reason is required before reversing a transaction.</div>
+        <% } %>
+        <% if (req_query_error === 'notcompleted') { %>
+          <div style="background:#fee2e2; color:#991b1b; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:600;">⚠ Only approved (completed) transactions can be reversed.</div>
+        <% } %>
+        <% if (req_query_reversed) { %>
+          <div style="background:#dcfce7; color:#166534; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:600;">✓ Transaction reversed — balance adjusted and user emailed with your reason.</div>
+        <% } %>
+        <% if (req_query_restored) { %>
+          <div style="background:#dcfce7; color:#166534; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:600;">✓ Transaction restored — balance re-applied.</div>
+        <% } %>
         <% if (transactions.length === 0) { %>
           <p style="color:var(--gray); text-align:center; padding:20px; font-size:14px;">No transactions.</p>
         <% } else { %>
           <table class="table">
-            <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+            <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               <% transactions.forEach(function(t) { %>
-                <tr><td style="font-size:12px;"><%= new Date(t.created_at).toLocaleDateString() %></td><td style="text-transform:capitalize;"><%= t.type %></td><td>$<%= t.amount %></td><td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td></tr>
+                <tr>
+                  <td style="font-size:12px;"><%= new Date(t.created_at).toLocaleDateString() %></td>
+                  <td style="text-transform:capitalize;"><%= t.type %></td>
+                  <td>$<%= t.amount %></td>
+                  <td>
+                    <span class="badge badge-<%= t.status %>"><%= t.status %></span>
+                    <% if (t.status === 'reversed' && t.reversal_reason) { %>
+                      <div style="font-size:11px; color:var(--gray); margin-top:4px; font-style:italic;">Reason: <%= t.reversal_reason %></div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (t.status === 'completed') { %>
+                      <button type="button" class="btn btn-navy btn-sm" style="padding:3px 10px; background:#7f1d1d;" onclick="openReverseModal(<%= t.id %>, '<%= t.type %>', $<%= t.amount %>)">⇄ Reverse</button>
+                    <% } else if (t.status === 'reversed') { %>
+                      <form action="/admin/transactions/<%= t.id %>/restore" method="POST" style="display:inline;"><button class="btn btn-gold btn-sm" style="padding:3px 10px;">↺ Restore</button></form>
+                    <% } else { %>
+                      <span style="color:var(--gray); font-size:12px;">—</span>
+                    <% } %>
+                  </td>
+                </tr>
               <% }) %>
             </tbody>
           </table>
@@ -196,5 +227,58 @@
     </div>
   </main>
 </div>
+
+<!-- Reverse reason modal -->
+<div class="reverse-modal-overlay" id="reverseModalOverlay" onclick="if(event.target===this) closeReverseModal()">
+  <div class="reverse-modal">
+    <h3>⇄ Reverse Transaction</h3>
+    <div class="rm-sub">Reversing will undo the balance effect, mark the transaction as <strong>reversed</strong> in the user's dashboard, and email the user with your reason. This can be undone later with Restore.</div>
+    <div class="rm-target" id="rmTarget"></div>
+    <label style="display:block; color:var(--white); font-size:13px; font-weight:600; margin-bottom:8px;">Reason for reversal <span style="color:#e74c3c;">*</span></label>
+    <textarea id="rmReason" maxlength="500" placeholder="Explain why you are reversing this transaction (the user will see this reason by email and in their dashboard)..."></textarea>
+    <div class="rm-error" id="rmError">Please enter a reason before reversing.</div>
+    <div class="rm-actions">
+      <button type="button" class="btn btn-navy btn-sm" onclick="closeReverseModal()">Cancel</button>
+      <button type="button" class="btn btn-gold btn-sm" id="rmConfirm" onclick="submitReverse()">⇄ Reverse Now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var rmTxnId = null;
+  function openReverseModal(txnId, txnType, amount) {
+    rmTxnId = txnId;
+    var label = txnType.charAt(0).toUpperCase() + txnType.slice(1);
+    document.getElementById('rmTarget').textContent = label + ' — ' + amount;
+    document.getElementById('rmReason').value = '';
+    document.getElementById('rmError').style.display = 'none';
+    document.getElementById('reverseModalOverlay').classList.add('open');
+    setTimeout(function(){ document.getElementById('rmReason').focus(); }, 60);
+  }
+  function closeReverseModal() {
+    document.getElementById('reverseModalOverlay').classList.remove('open');
+    rmTxnId = null;
+  }
+  function submitReverse() {
+    var reason = document.getElementById('rmReason').value.trim();
+    if (!reason) {
+      document.getElementById('rmError').style.display = 'block';
+      return;
+    }
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/transactions/' + rmTxnId + '/reverse';
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'reason';
+    input.value = reason;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeReverseModal();
+  });
+</script>
 </body>
 </html>

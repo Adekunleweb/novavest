@@ -632,3 +632,19 @@ footer { background: var(--navy); color: #8a9bb0; padding: 60px 0 24px; }
   .mc-tpl-list { grid-template-columns: 1fr; }
   .mc-user-name { min-width: 100px; }
 }
+
+/* ===== Reversed transaction status ===== */
+.badge-reversed { background: #fde8e8; color: #b91c1c; border: 1px dashed #b91c1c; }
+.badge-restore-hint { background: rgba(212,175,55,0.15); color: var(--gold); }
+
+/* ===== Reverse modal ===== */
+.reverse-modal-overlay { display:none; position:fixed; inset:0; background:rgba(3,8,18,0.78); z-index:1200; align-items:center; justify-content:center; padding:20px; }
+.reverse-modal-overlay.open { display:flex; }
+.reverse-modal { background:var(--navy); border:1px solid rgba(212,175,55,0.3); border-radius:14px; max-width:500px; width:100%; padding:28px; box-shadow:0 30px 80px rgba(0,0,0,0.5); }
+.reverse-modal h3 { margin:0 0 6px; color:var(--white); font-size:20px; }
+.reverse-modal .rm-sub { color:var(--gray); font-size:13px; line-height:1.6; margin:0 0 18px; }
+.reverse-modal .rm-target { background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.25); border-radius:8px; padding:10px 14px; color:var(--gold); font-size:13px; font-weight:600; margin-bottom:16px; }
+.reverse-modal textarea { width:100%; min-height:90px; background:rgba(10,22,40,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:var(--white); padding:12px 14px; font-size:14px; font-family:inherit; resize:vertical; box-sizing:border-box; }
+.reverse-modal textarea:focus { outline:none; border-color:var(--gold); }
+.rm-error { color:#e74c3c; font-size:12px; margin:6px 0 0; display:none; }
+.rm-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }

@@ -98,6 +98,37 @@
       height: 5px;
       background: var(--green);
     }
+
+    /* ===== Chat image support (user → admin) ===== */
+    .cm-bubble .chat-img {
+      display: block;
+      max-width: 240px;
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      border: 1px solid var(--gray-light);
+    }
+    .chat-msg.user .cm-bubble .chat-img { border-color: rgba(212,175,55,0.45); }
+    .img-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .img-actions a {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .img-actions .ia-view { background: rgba(10,22,40,0.08); color: var(--navy); border: 1px solid rgba(10,22,40,0.25); }
+    .img-actions .ia-view:hover { background: rgba(10,22,40,0.16); }
+    .img-actions .ia-download { background: rgba(212,175,55,0.15); color: #8a6d1a; border: 1px solid rgba(212,175,55,0.5); }
+    .img-actions .ia-download:hover { background: rgba(212,175,55,0.3); }
   </style>
 </head>
 <body>
@@ -176,7 +207,7 @@ socket.on('connect', () => {
 socket.on('new_message', (data) => {
   if (currentUserId && data.user_id === currentUserId) {
     hideUserTyping(data.user_id);
-    addMessage('user', data.message, data.created_at);
+    addMessage('user', data.message, data.created_at, data.image_path);
   }
   refreshUserList(); // update list (last message, unread count) in place
 });
@@ -286,7 +317,7 @@ function renderConversation(messages) {
     inner.className = 'chat-history-inner'; // collapsed by default
     inner.id = 'convHistoryInner';
     messages.slice(0, hiddenCount).forEach(m => {
-      inner.appendChild(makeMessageEl(m.sender, m.message, m.created_at));
+      inner.appendChild(makeMessageEl(m.sender, m.message, m.created_at, m.image_path));
     });
     block.appendChild(inner);
 
@@ -307,7 +338,7 @@ function renderConversation(messages) {
   recent.className = 'recent-messages';
   recent.id = 'convRecent';
   messages.slice(-COLLAPSE_COUNT).forEach(m => {
-    recent.appendChild(makeMessageEl(m.sender, m.message, m.created_at));
+    recent.appendChild(makeMessageEl(m.sender, m.message, m.created_at, m.image_path));
   });
 
   const ti = document.createElement('div');
@@ -352,11 +383,22 @@ function updateToggleLabel() {
 }
 
 // ===== Messages =====
-function makeMessageEl(sender, text, time) {
+function makeMessageEl(sender, text, time, imagePath) {
   const div = document.createElement('div');
   div.className = 'chat-msg ' + (sender === 'user' ? 'user' : 'admin');
   const timeStr = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  div.innerHTML = '<div class="cm-bubble">' + escapeHtml(text) + '</div>' +
+  let bubble = '';
+  if (imagePath) {
+    bubble += '<img class="chat-img" src="' + imagePath + '" alt="User attached image" onclick="openImagePopup(\'' + imagePath + '\')">';
+    bubble += '<div class="img-actions">'
+            +   '<a class="ia-view" href="' + imagePath + '" target="_blank" onclick="event.preventDefault(); openImagePopup(\'' + imagePath + '\')">🔍 View</a>'
+            +   '<a class="ia-download" href="' + imagePath + '" download>⬇ Download</a>'
+            + '</div>';
+  }
+  if (text && text !== '[Image]') {
+    bubble += escapeHtml(text);
+  }
+  div.innerHTML = '<div class="cm-bubble">' + bubble + '</div>' +
                   '<div class="cm-time">' + (sender === 'admin' ? 'Support · ' : '') + timeStr + '</div>';
   return div;
 }
@@ -375,7 +417,7 @@ function ensureTypingIndicator(recent) {
   return ti;
 }
 
-function addMessage(sender, text, time) {
+function addMessage(sender, text, time, imagePath) {
   const body = document.getElementById('convBody');
   const empty = body.querySelector('.chat-empty');
   if (empty) empty.remove();
@@ -389,7 +431,7 @@ function addMessage(sender, text, time) {
   }
   const ti = ensureTypingIndicator(recent);
 
-  const div = makeMessageEl(sender, text, time);
+  const div = makeMessageEl(sender, text, time, imagePath);
   if (ti.classList.contains('visible')) {
     recent.insertBefore(div, ti); // keep typing indicator last while visible
   } else {
@@ -489,6 +531,25 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+// ===== Image popup (click to enlarge) =====
+function openImagePopup(src) {
+  let ov = document.getElementById('imgPopupOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'imgPopupOverlay';
+    ov.style.cssText = 'position:fixed; inset:0; background:rgba(3,8,18,0.9); z-index:1500; display:none; align-items:center; justify-content:center; cursor:zoom-out; padding:24px;';
+    ov.innerHTML = '<div style="text-align:center;">'
+                 + '<img id="imgPopupImg" style="max-width:92%; max-height:86%; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.6);">'
+                 + '<div style="margin-top:14px;"><a id="imgPopupDl" href="#" download style="color:#d4af37; font-weight:700; text-decoration:none; font-size:14px; background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.5); padding:10px 22px; border-radius:999px; display:inline-block;">⬇ Download Image</a></div>'
+                 + '</div>';
+    ov.onclick = function(e) { if (e.target === ov) ov.style.display = 'none'; };
+    document.body.appendChild(ov);
+  }
+  document.getElementById('imgPopupImg').src = src;
+  document.getElementById('imgPopupDl').href = src;
+  ov.style.display = 'flex';
 }
 </script>
 </body>

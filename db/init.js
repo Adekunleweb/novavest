@@ -92,6 +92,7 @@ db.serialize(() => {
     wallet_address TEXT,
     status TEXT DEFAULT 'pending',
     tx_hash TEXT,
+    transaction_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`);
@@ -121,6 +122,8 @@ db.serialize(() => {
     description TEXT,
     tx_hash TEXT,
     status TEXT DEFAULT 'completed',
+    reversal_reason TEXT,
+    reversed_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`);
@@ -133,6 +136,7 @@ db.serialize(() => {
     wallet_address TEXT,
     currency TEXT,
     status TEXT DEFAULT 'pending',
+    transaction_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`);
@@ -143,6 +147,7 @@ db.serialize(() => {
     user_id INTEGER NOT NULL,
     sender TEXT NOT NULL,
     message TEXT NOT NULL,
+    image_path TEXT,
     read_status INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -218,6 +223,11 @@ db.serialize(() => {
   db.run(`ALTER TABLE transactions ADD COLUMN tx_hash TEXT`, () => {});
   db.run(`ALTER TABLE users ADD COLUMN reset_token TEXT`, () => {});
   db.run(`ALTER TABLE users ADD COLUMN reset_expires TEXT`, () => {});
+  db.run(`ALTER TABLE deposits ADD COLUMN transaction_id INTEGER`, () => {});
+  db.run(`ALTER TABLE withdrawals ADD COLUMN transaction_id INTEGER`, () => {});
+  db.run(`ALTER TABLE transactions ADD COLUMN reversal_reason TEXT`, () => {});
+  db.run(`ALTER TABLE transactions ADD COLUMN reversed_at DATETIME`, () => {});
+  db.run(`ALTER TABLE messages ADD COLUMN image_path TEXT`, () => {});
 
   // Seed investment plans
   db.run(`INSERT OR IGNORE INTO plans (id, name, min_deposit, max_deposit, roi_percent, duration_days, description, badge) VALUES

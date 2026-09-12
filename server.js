@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const multer = require('multer');
 
 const db = require('./db/init');
 const countries = require('./db/countries');
@@ -29,6 +30,29 @@ app.use(session({
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ============ SUPPORT CHAT IMAGE UPLOADS ============
+// Users can attach an image to a support message. Stored under public/uploads
+// (served statically) with a random name so filenames can't collide or be guessed.
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+const chatImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = (path.extname(file.originalname) || '.jpg').toLowerCase().replace(/[^.a-z0-9]/g, '');
+    cb(null, 'chat_' + Date.now() + '_' + crypto.randomBytes(6).toString('hex') + ext);
+  }
+});
+const chatImageFilter = (req, file, cb) => {
+  const ok = /^image\/(png|jpe?g|gif|webp)$/i.test(file.mimetype);
+  cb(ok ? null : new Error('Only PNG, JPG, GIF or WEBP images are allowed'), ok);
+};
+const chatImageUpload = multer({
+  storage: chatImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: chatImageFilter
+});
+try { if (!require('fs').existsSync(uploadDir)) require('fs').mkdirSync(uploadDir, { recursive: true }); } catch (e) { console.error('[uploads] mkdir failed:', e.message); }
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -120,13 +144,13 @@ app.post('/signup', (req, res) => {
           // Add $250 Sign Up Bonus transaction
           db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'bonus', 250, 'Sign Up Bonus', 'completed', ?)`, [userId, generateTxHash('bonus')]);
 
-          // If referred by someone, give referrer $700 bonus and log referral transaction
+          // If referred by someone, give referrer $70 bonus and log referral transaction
           if (ref) {
             db.get(`SELECT * FROM users WHERE referral_code = ?`, [ref], (e, referrer) => {
               if (referrer && referrer.id !== userId) {
-                // Give referrer $700 bonus
-                db.run(`UPDATE users SET balance = balance + 700, total_earned = total_earned + 700 WHERE id = ?`, [referrer.id]);
-                db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'bonus', 700, 'Referral Bonus', 'completed', ?)`, [referrer.id, generateTxHash('bonus')]);
+                // Give referrer $70 bonus
+                db.run(`UPDATE users SET balance = balance + 70, total_earned = total_earned + 70 WHERE id = ?`, [referrer.id]);
+                db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'bonus', 70, 'Referral Bonus', 'completed', ?)`, [referrer.id, generateTxHash('bonus')]);
                 logActivity(referrer.id, 'referral', `Referral bonus credited: ${full_name} signed up with your link`, null);
               }
             });
@@ -367,7 +391,11 @@ app.post('/deposit', requireUser, (req, res) => {
       function(err) {
         const depositId = this.lastID;
         db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'deposit', ?, ?, 'pending', ?)`,
-          [userId, amount, `Deposit via ${wallet.currency} - pending confirmation`, tx_hash]);
+          [userId, amount, `Deposit via ${wallet.currency} - pending confirmation`, tx_hash], function() {
+            // Link the deposit record to this exact transaction so admin approve/reject
+            // always updates the correct row (not "the latest of that type")
+            db.run(`UPDATE deposits SET transaction_id = ? WHERE id = ?`, [this.lastID, depositId]);
+          });
         logActivity(userId, 'deposit', `Deposit request: $${amount} via ${wallet.currency}`, req.ip);
         db.get(`SELECT * FROM users WHERE id = ?`, [userId], (e, user) => {
           if (user) mailer.notifyDepositSubmitted(user, { amount, currency: wallet.currency, network: wallet.network, tx_hash });
@@ -441,9 +469,13 @@ app.post('/withdraw', requireUser, (req, res) => {
     db.run(`INSERT INTO withdrawals (user_id, amount, wallet_address, currency, status) VALUES (?, ?, ?, ?, 'pending')`,
       [userId, amt, wallet_address, currency],
       function(err) {
+        const wdId = this.lastID;
         const wHash = generateTxHash('withdrawal');
         db.run(`INSERT INTO transactions (user_id, type, amount, description, status, tx_hash) VALUES (?, 'withdrawal', ?, ?, 'pending', ?)`,
-          [userId, amt, `Withdrawal request to ${wallet_address}`, wHash]);
+          [userId, amt, `Withdrawal request to ${wallet_address}`, wHash], function() {
+            // Link the withdrawal record to this exact transaction
+            db.run(`UPDATE withdrawals SET transaction_id = ? WHERE id = ?`, [this.lastID, wdId]);
+          });
         logActivity(userId, 'withdraw', `Withdrawal request: $${amt}`, req.ip);
         mailer.notifyWithdrawalSubmitted(user, { amount: amt, currency, wallet_address });
         res.redirect('/withdraw?success=1');
@@ -618,6 +650,34 @@ app.post('/support/send', requireUser, (req, res) => {
   });
 });
 
+// User sends an image in the support chat (multipart form-data via multer)
+app.post('/support/send-image', requireUser, (req, res) => {
+  chatImageUpload.single('image')(req, res, (multerErr) => {
+    const userId = req.session.userId;
+    const caption = ((req.body && req.body.message) || '').trim().slice(0, 2000);
+
+    if (multerErr) {
+      return res.status(400).json({ success: false, error: multerErr.code === 'LIMIT_FILE_SIZE' ? 'Image is too large (max 5MB)' : multerErr.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No image attached' });
+    }
+
+    const imagePath = '/uploads/' + req.file.filename; // served statically from public/uploads
+    const message = caption || '[Image]';
+    db.run(`INSERT INTO messages (user_id, sender, message, image_path) VALUES (?, 'user', ?, ?)`,
+      [userId, message, imagePath], function () {
+        const msgId = this.lastID;
+        io.to('admin-room').emit('new_message', {
+          id: msgId, user_id: userId, sender: 'user', message, image_path: imagePath,
+          created_at: new Date().toISOString()
+        });
+        logActivity(userId, 'support_image', `Sent image in support chat: ${imagePath}`, req.ip);
+        res.json({ success: true, image_path: imagePath, autoReply: null });
+      });
+  });
+});
+
 app.get('/support/messages', requireUser, (req, res) => {
   const userId = req.session.userId;
   db.all(`SELECT * FROM messages WHERE user_id = ? ORDER BY created_at ASC`, [userId], (err, messages) => {
@@ -775,6 +835,9 @@ app.get('/admin/users/:id', requireAdmin, (req, res) => {
                 transactions: transactions||[], withdrawals: withdrawals||[], 
                 activities: activities||[], active: 'users', adminName: req.session.adminName,
                 req_query_generated: req.query.generated,
+                req_query_error: req.query.error || null,
+                req_query_reversed: req.query.reversed === '1',
+                req_query_restored: req.query.restored === '1',
                 title: `User: ${user?.full_name} - ApexCrestVest Admin`
               });
             });
@@ -974,7 +1037,8 @@ app.post('/admin/generate-transactions/batch', requireAdmin, (req, res) => {
 // Admin - Deposits
 app.get('/admin/deposits', requireAdmin, (req, res) => {
   db.all(`SELECT d.*, u.full_name, u.email FROM deposits d JOIN users u ON d.user_id = u.id ORDER BY d.created_at DESC`, (err, deposits) => {
-    res.render('admin/deposits', { deposits: deposits||[], active: 'deposits', adminName: req.session.adminName, title: 'Deposits - ApexCrestVest Admin' });
+    res.render('admin/deposits', { deposits: deposits||[], active: 'deposits', adminName: req.session.adminName, title: 'Deposits - ApexCrestVest Admin',
+      req_query_error: req.query.error || null, req_query_reversed: req.query.reversed === '1', req_query_restored: req.query.restored === '1' });
   });
 });
 
@@ -983,12 +1047,20 @@ app.post('/admin/deposits/:id/approve', requireAdmin, (req, res) => {
   const depositId = req.params.id;
   db.get(`SELECT * FROM deposits WHERE id = ?`, [depositId], (err, deposit) => {
     db.run(`UPDATE deposits SET status = 'confirmed' WHERE id = ?`, [depositId], () => {
-      db.run(`UPDATE users SET balance = balance + ?, total_deposited = total_deposited + ? WHERE id = ?`, [deposit.amount, deposit.amount, deposit.user_id]);
-      db.run(`UPDATE transactions SET status = 'completed', description = ? WHERE id = (SELECT id FROM transactions WHERE user_id = ? AND type = 'deposit' ORDER BY id DESC LIMIT 1)`, 
-        [`Deposit of $${deposit.amount} confirmed`, deposit.user_id]);
-      db.get(`SELECT * FROM users WHERE id = ?`, [deposit.user_id], (e, user) => {
-        if (user) mailer.notifyDepositApproved(user, { amount: deposit.amount, currency: deposit.currency });
-      });
+      if (deposit) {
+        db.run(`UPDATE users SET balance = balance + ?, total_deposited = total_deposited + ? WHERE id = ?`, [deposit.amount, deposit.amount, deposit.user_id]);
+        // Update the exact linked transaction (falls back to latest deposit txn for old rows)
+        if (deposit.transaction_id) {
+          db.run(`UPDATE transactions SET status = 'completed', description = ? WHERE id = ?`,
+            [`Deposit of $${deposit.amount} confirmed`, deposit.transaction_id]);
+        } else {
+          db.run(`UPDATE transactions SET status = 'completed', description = ? WHERE id = (SELECT id FROM transactions WHERE user_id = ? AND type = 'deposit' AND status = 'pending' ORDER BY id DESC LIMIT 1)`,
+            [`Deposit of $${deposit.amount} confirmed`, deposit.user_id]);
+        }
+        db.get(`SELECT * FROM users WHERE id = ?`, [deposit.user_id], (e, user) => {
+          if (user) mailer.notifyDepositApproved(user, { amount: deposit.amount, currency: deposit.currency });
+        });
+      }
       res.redirect('/admin/deposits');
     });
   });
@@ -999,6 +1071,14 @@ app.post('/admin/deposits/:id/reject', requireAdmin, (req, res) => {
   db.get(`SELECT * FROM deposits WHERE id = ?`, [depositId], (err, deposit) => {
     db.run(`UPDATE deposits SET status = 'rejected' WHERE id = ?`, [depositId], () => {
       if (deposit) {
+        // Mark the linked user transaction as rejected so it no longer shows "pending"
+        if (deposit.transaction_id) {
+          db.run(`UPDATE transactions SET status = 'rejected', description = ? WHERE id = ?`,
+            [`Deposit of $${deposit.amount} rejected by admin`, deposit.transaction_id]);
+        } else {
+          db.run(`UPDATE transactions SET status = 'rejected', description = ? WHERE id = (SELECT id FROM transactions WHERE user_id = ? AND type = 'deposit' AND status = 'pending' ORDER BY id DESC LIMIT 1)`,
+            [`Deposit of $${deposit.amount} rejected by admin`, deposit.user_id]);
+        }
         db.get(`SELECT * FROM users WHERE id = ?`, [deposit.user_id], (e, user) => {
           if (user) mailer.notifyDepositRejected(user, { amount: deposit.amount, currency: deposit.currency });
         });
@@ -1011,7 +1091,8 @@ app.post('/admin/deposits/:id/reject', requireAdmin, (req, res) => {
 // Admin - Withdrawals
 app.get('/admin/withdrawals', requireAdmin, (req, res) => {
   db.all(`SELECT w.*, u.full_name, u.email FROM withdrawals w JOIN users u ON w.user_id = u.id ORDER BY w.created_at DESC`, (err, withdrawals) => {
-    res.render('admin/withdrawals', { withdrawals: withdrawals||[], active: 'withdrawals', adminName: req.session.adminName, title: 'Withdrawals - ApexCrestVest Admin' });
+    res.render('admin/withdrawals', { withdrawals: withdrawals||[], active: 'withdrawals', adminName: req.session.adminName, title: 'Withdrawals - ApexCrestVest Admin',
+      req_query_error: req.query.error || null, req_query_reversed: req.query.reversed === '1', req_query_restored: req.query.restored === '1' });
   });
 });
 
@@ -1019,11 +1100,20 @@ app.post('/admin/withdrawals/:id/approve', requireAdmin, (req, res) => {
   const wdId = req.params.id;
   db.get(`SELECT * FROM withdrawals WHERE id = ?`, [wdId], (err, wd) => {
     db.run(`UPDATE withdrawals SET status = 'completed' WHERE id = ?`, [wdId], () => {
-      db.run(`UPDATE users SET balance = balance - ? WHERE id = ?`, [wd.amount, wd.user_id]);
-      db.run(`UPDATE transactions SET status = 'completed' WHERE id = (SELECT id FROM transactions WHERE user_id = ? AND type = 'withdrawal' ORDER BY id DESC LIMIT 1)`, [wd.user_id]);
-      db.get(`SELECT * FROM users WHERE id = ?`, [wd.user_id], (e, user) => {
-        if (user) mailer.notifyWithdrawalApproved(user, { amount: wd.amount, currency: wd.currency, wallet_address: wd.wallet_address });
-      });
+      if (wd) {
+        db.run(`UPDATE users SET balance = balance - ? WHERE id = ?`, [wd.amount, wd.user_id]);
+        // Update the exact linked transaction (falls back to latest pending withdrawal txn for old rows)
+        if (wd.transaction_id) {
+          db.run(`UPDATE transactions SET status = 'completed', description = ? WHERE id = ?`,
+            [`Withdrawal of $${wd.amount} approved and processed`, wd.transaction_id]);
+        } else {
+          db.run(`UPDATE transactions SET status = 'completed', description = ? WHERE id = (SELECT id FROM transactions WHERE user_id = ? AND type = 'withdrawal' AND status = 'pending' ORDER BY id DESC LIMIT 1)`,
+            [`Withdrawal of $${wd.amount} approved and processed`, wd.user_id]);
+        }
+        db.get(`SELECT * FROM users WHERE id = ?`, [wd.user_id], (e, user) => {
+          if (user) mailer.notifyWithdrawalApproved(user, { amount: wd.amount, currency: wd.currency, wallet_address: wd.wallet_address });
+        });
+      }
       res.redirect('/admin/withdrawals');
     });
   });
@@ -1033,12 +1123,117 @@ app.post('/admin/withdrawals/:id/reject', requireAdmin, (req, res) => {
   db.get(`SELECT * FROM withdrawals WHERE id = ?`, [req.params.id], (err, wd) => {
     db.run(`UPDATE withdrawals SET status = 'rejected' WHERE id = ?`, [req.params.id], () => {
       if (wd) {
+        // Mark the linked user transaction as rejected so it no longer shows "pending"
+        if (wd.transaction_id) {
+          db.run(`UPDATE transactions SET status = 'rejected', description = ? WHERE id = ?`,
+            [`Withdrawal of $${wd.amount} rejected by admin`, wd.transaction_id]);
+        } else {
+          db.run(`UPDATE transactions SET status = 'rejected', description = ? WHERE id = (SELECT id FROM transactions WHERE user_id = ? AND type = 'withdrawal' AND status = 'pending' ORDER BY id DESC LIMIT 1)`,
+            [`Withdrawal of $${wd.amount} rejected by admin`, wd.user_id]);
+        }
         db.get(`SELECT * FROM users WHERE id = ?`, [wd.user_id], (e, user) => {
           if (user) mailer.notifyWithdrawalRejected(user, { amount: wd.amount, currency: wd.currency });
         });
       }
       res.redirect('/admin/withdrawals');
     });
+  });
+});
+
+// ============ ADMIN - TRANSACTION REVERSAL ============
+// Reverse any already-approved/completed transaction. Requires a reason.
+// Undoes the balance effect, marks the transaction as reversed, and emails
+// the user with the admin's reason.
+app.post('/admin/transactions/:id/reverse', requireAdmin, (req, res) => {
+  const txnId = req.params.id;
+  const reason = (req.body.reason || '').trim();
+  const referrer = req.get('Referrer') || '/admin/deposits';
+
+  if (!reason || reason.length > 500) {
+    // Reason is mandatory — bounce back with an error flag
+    return res.redirect(referrer + (referrer.includes('?') ? '&' : '?') + 'error=reason');
+  }
+
+  db.get(`SELECT * FROM transactions WHERE id = ?`, [txnId], (err, txn) => {
+    if (!txn) return res.redirect(referrer);
+
+    if (txn.status !== 'completed') {
+      // Only completed transactions can be reversed
+      return res.redirect(referrer + (referrer.includes('?') ? '&' : '?') + 'error=notcompleted');
+    }
+
+    const reversedAt = new Date().toISOString();
+    const origDesc = txn.description || '';
+
+    // Undo the balance effect of the transaction
+    if (txn.type === 'deposit' || txn.type === 'interest' || txn.type === 'bonus') {
+      // These credited the balance → subtract back
+      db.run(`UPDATE users SET balance = balance - ?, total_deposited = total_deposited - ? WHERE id = ?`,
+        [txn.amount, txn.type === 'deposit' ? txn.amount : 0, txn.user_id]);
+      if (txn.type === 'interest' || txn.type === 'bonus') {
+        db.run(`UPDATE users SET total_earned = total_earned - ? WHERE id = ?`, [txn.amount, txn.user_id]);
+      }
+    } else if (txn.type === 'withdrawal') {
+      // Withdrawal debited the balance → add back
+      db.run(`UPDATE users SET balance = balance + ? WHERE id = ?`, [txn.amount, txn.user_id]);
+      db.run(`UPDATE withdrawals SET status = 'reversed' WHERE transaction_id = ?`, [txn.id]);
+    }
+    if (txn.type === 'deposit') {
+      db.run(`UPDATE deposits SET status = 'reversed' WHERE transaction_id = ?`, [txn.id]);
+    }
+
+    // Mark the transaction as reversed with the reason + timestamp
+    db.run(`UPDATE transactions SET status = 'reversed', reversal_reason = ?, reversed_at = ?, description = ? WHERE id = ?`,
+      [reason, reversedAt, `${origDesc} — REVERSED: ${reason}`, txn.id]);
+
+    logActivity(txn.user_id, 'admin_reverse', `Admin reversed ${txn.type} of $${txn.amount}: ${reason}`, req.ip);
+
+    // Email the user with the reason
+    db.get(`SELECT * FROM users WHERE id = ?`, [txn.user_id], (e, user) => {
+      if (user) mailer.notifyTransactionReversed(user, { type: txn.type, amount: txn.amount, reason, reversal_date: reversedAt });
+    });
+
+    res.redirect(referrer + (referrer.includes('?') ? '&' : '?') + 'reversed=1');
+  });
+});
+
+// ============ ADMIN - TRANSACTION RESTORE (undo a reversal) ============
+// Restores a previously reversed transaction back to completed and re-applies
+// the balance effect. Toggle-able: Reverse ⇄ Restore.
+app.post('/admin/transactions/:id/restore', requireAdmin, (req, res) => {
+  const txnId = req.params.id;
+  const referrer = req.get('Referrer') || '/admin/deposits';
+
+  db.get(`SELECT * FROM transactions WHERE id = ?`, [txnId], (err, txn) => {
+    if (!txn) return res.redirect(referrer);
+    if (txn.status !== 'reversed') {
+      return res.redirect(referrer + (referrer.includes('?') ? '&' : '?') + 'error=notreversed');
+    }
+
+    const restoredDesc = (txn.description || '').replace(/ — REVERSED:.*$/, '');
+
+    // Re-apply the balance effect
+    if (txn.type === 'deposit' || txn.type === 'interest' || txn.type === 'bonus') {
+      db.run(`UPDATE users SET balance = balance + ?, total_deposited = total_deposited + ? WHERE id = ?`,
+        [txn.amount, txn.type === 'deposit' ? txn.amount : 0, txn.user_id]);
+      if (txn.type === 'interest' || txn.type === 'bonus') {
+        db.run(`UPDATE users SET total_earned = total_earned + ? WHERE id = ?`, [txn.amount, txn.user_id]);
+      }
+    } else if (txn.type === 'withdrawal') {
+      db.run(`UPDATE users SET balance = balance - ? WHERE id = ?`, [txn.amount, txn.user_id]);
+      db.run(`UPDATE withdrawals SET status = 'completed' WHERE transaction_id = ?`, [txn.id]);
+    }
+    if (txn.type === 'deposit') {
+      db.run(`UPDATE deposits SET status = 'confirmed' WHERE transaction_id = ?`, [txn.id]);
+    }
+
+    // Mark back to completed, clear the reversal info
+    db.run(`UPDATE transactions SET status = 'completed', reversal_reason = NULL, reversed_at = NULL, description = ? WHERE id = ?`,
+      [restoredDesc, txn.id]);
+
+    logActivity(txn.user_id, 'admin_restore', `Admin restored ${txn.type} of $${txn.amount}`, req.ip);
+
+    res.redirect(referrer + (referrer.includes('?') ? '&' : '?') + 'restored=1');
   });
 });
 
