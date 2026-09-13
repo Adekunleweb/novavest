@@ -55,7 +55,7 @@
                     <form action="/admin/withdrawals/<%= w.id %>/approve" method="POST" style="display:inline;"><button class="btn btn-gold btn-sm" style="padding:4px 12px;">✓ Approve</button></form>
                     <form action="/admin/withdrawals/<%= w.id %>/reject" method="POST" style="display:inline;"><button class="btn btn-navy btn-sm" style="padding:4px 12px;">✗ Reject</button></form>
                   <% } else if (w.status === 'completed' && w.transaction_id) { %>
-                    <button type="button" class="btn btn-navy btn-sm" style="padding:4px 12px; background:#7f1d1d;" onclick="openReverseModal(<%= w.transaction_id %>, '<%= w.full_name.replace(/'/g, "\\'") %>', $<%= w.amount %>)">⇄ Reverse</button>
+                    <button type="button" class="btn btn-navy btn-sm" style="padding:4px 12px; background:#7f1d1d;" onclick="openReverseModal(<%= w.transaction_id %>, '<%= w.full_name.replace(/'/g, "\\'") %>', '$<%= w.amount %>')">⇄ Reverse</button>
                   <% } else if (w.status === 'reversed' && w.transaction_id) { %>
                     <form action="/admin/transactions/<%= w.transaction_id %>/restore" method="POST" style="display:inline;"><button class="btn btn-gold btn-sm" style="padding:4px 12px;">↺ Restore</button></form>
                   <% } else { %>

@@ -133,7 +133,7 @@
                   </td>
                   <td>
                     <% if (t.status === 'completed') { %>
-                      <button type="button" class="btn btn-navy btn-sm" style="padding:3px 10px; background:#7f1d1d;" onclick="openReverseModal(<%= t.id %>, '<%= t.type %>', $<%= t.amount %>)">⇄ Reverse</button>
+                      <button type="button" class="btn btn-navy btn-sm" style="padding:3px 10px; background:#7f1d1d;" onclick="openReverseModal(<%= t.id %>, '<%= t.type %>', '$<%= t.amount %>')">⇄ Reverse</button>
                     <% } else if (t.status === 'reversed') { %>
                       <form action="/admin/transactions/<%= t.id %>/restore" method="POST" style="display:inline;"><button class="btn btn-gold btn-sm" style="padding:3px 10px;">↺ Restore</button></form>
                     <% } else { %>
